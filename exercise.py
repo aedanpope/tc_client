@@ -37,9 +37,9 @@ if __name__ == '__main__':
   x = 0
   focus_uid = -1
 
-  bot = FocusFireBot()
+  # bot = FocusFireBot()
 
-  # bot = TFBot()
+  bot = TFBot()
 
   update = tc.receive() # Get the first state so we can see our starting units.
   tc.send([])
@@ -56,10 +56,10 @@ if __name__ == '__main__':
         battles_won += 1
       total_battles += 1
       print "\nBATTLE ENDED"
-      print "total_battles = " + str(total_battles)
-      print "battles_won = " + str(battles_won)
       print ""
 
+    print "total_battles = " + str(total_battles)
+    print "battles_won = " + str(battles_won)
     # Populate commands.
     unit_commands = bot.get_commands(tc.state);
     commands = [[tc_client.CMD.command_unit_protected] + unit_command for unit_command in unit_commands]
@@ -70,6 +70,6 @@ if __name__ == '__main__':
     # Send the orders.
     tc.send(commands)
     x += 1
-    time.sleep(0.5)
+    # time.sleep(0.5)
 
     # if x == 2: break

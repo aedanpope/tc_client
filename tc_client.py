@@ -172,6 +172,7 @@ class TorchClient:
 
     hello += ",micro_mode=" + str(self.mode.micro_battles)
 
+    print "sending hello: '" + hello + "'"
     self.socket.send(hello)
 
     print "getting setup message"

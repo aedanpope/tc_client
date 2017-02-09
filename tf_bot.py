@@ -31,7 +31,7 @@ def bias_variable(shape):
 
 class TFBot:
   # Infra
-  tf_session = None
+  sess = None
 
   # Q-network config.
   # TF-class objects.
@@ -46,17 +46,19 @@ class TFBot:
   prev_action = None
   target_q = None
   total_reward = None
+  num_friendly_units = None
+  num_enemy_units = None
 
   def __init__(self):
     self.setup_q_nn()
 
-    self.tf_session = tf.InteractiveSession()
-    self.tf_session.run(tf.initialize_all_variables())
+    self.sess = tf.InteractiveSession()
+    self.sess.run(tf.initialize_all_variables())
     # sess = tf.InteractiveSession()
     # sess.run(tf.global_variables_initializer())
 
 
-  def setup_q_nn():
+  def setup_q_nn(self):
     self.inp_x = tf.placeholder(tf.float32, [1, 30])
     self.out_y = tf.placeholder(tf.float32, [1, 14])
     # inp_x = tf.placeholder(tf.float32, [None, 10,3])
@@ -80,34 +82,38 @@ class TFBot:
 
   def get_commands(self, state):
     inp_val = TFBot.state_to_input(state)
+    num_friendly_units = len(state.friendly_units)
+    num_enemy_units = len(state.enemy_units)
 
     # Process reward for previous action taken.
-    # TODO calc this as unit deaths or something.
-    reward = 1
-    total_reward += reward
+    if (self.prev_action):
+      if state.battle_just_ended:
+        reward = 10
+      else:
+        cur_fitness = num_friendly_units - num_enemy_units
+        reward = cur_fitness - self.prev_fitness
 
-    # Obtain the Q' values for previous action by feeding the new state
-    # through our network
-    q1 = sess.run(self.calc_q,feed_dict={inp_x:inp_val})
-    max_q1 = np.max(q1)
-    # Set the reward for taking the previous action, based on how good
-    # the current state is.
-    # BELLMAN EQUATION
-    target_q[self.prev_action] = reward + GAMMA*max_q1
-    # Train.
-    # For the previous input & subsequent prediction - apply bellman based on the
-    # actual reward.
-    sess.run(self.train,feed_dict={inp_x:self.prev_inp,self.out_y:target_q})
+      total_reward += reward
+
+      # Obtain the Q' values for previous action by feeding the new state
+      # through our network
+      q1 = self.sess.run(self.calc_q,feed_dict={self.inp_x:inp_val})
+      max_q1 = np.max(q1)
+      # Set the reward for taking the previous action, based on how good
+      # the current state is.
+      # BELLMAN EQUATION
+      target_q[self.prev_action] = reward + GAMMA*max_q1
+      # Train.
+      # For the previous input & subsequent prediction - apply bellman based on the
+      # actual reward.
+      self.sess.run(self.train,feed_dict={self.inp_x:self.prev_inp,self.out_y:target_q})
 
     # Generate new action.
 
-    # Inputs
-
-    # out_val = [TFBot.generate_random_onehot(14) for i in range(0, 5)]
-
     # Choose an action by greedily (with e chance of random action) from the Q-network
     # We need all the Q vals for learning.
-    action,all_q = sess.run([self.predict_y, self.calc_q],feed_dict={inp_x:inp_val})
+    print "inp_val = " + str(inp_val)
+    action,all_q = self.sess.run([self.predict_y, self.calc_q],feed_dict={self.inp_x:inp_val})
     # Consider getting a random action instead of what the model tells us.
     # E is a hyperparam of how often to do this, EPS = 0.1
     if random.random() < EPS:
@@ -117,6 +123,7 @@ class TFBot:
     self.prev_action = action
     self.prev_inp = inp_val
     self.target_q = all_q
+    self.prev_fitness = num_friendly_units - num_enemy_units
 
     # Outputs
     return TFBot.output_to_command(action, state)
@@ -166,13 +173,15 @@ class TFBot:
     #max 10 units
     # First 5 inputs are friendly units
     # second 5 are enemy units
-    friendly_tensor = TFBot.pack_unit_tensor(TFBot.units_to_tensor(state.get_friendly_units()), 5)
-    enemy_tensor = TFBot.pack_unit_tensor(TFBot.units_to_tensor(state.get_enemy_units()), 5)
-    return itertools.chain.from_iterable(friendly_tensor + enemy_tensor)
+    friendly_tensor = TFBot.pack_unit_tensor(TFBot.units_to_tensor(state.friendly_units), 5)
+    enemy_tensor = TFBot.pack_unit_tensor(TFBot.units_to_tensor(state.enemy_units), 5)
+    # ts = friendly_tensor + enemy_tensor
+    # return
+    return list(itertools.chain.from_iterable(friendly_tensor + enemy_tensor))
 
   @staticmethod
   def units_to_tensor(units):
-    return [TFBot.unit_to_vector(unit) for unit in units]
+    return [TFBot.unit_to_vector(unit) for unit in units.values()]
 
   @staticmethod
   def unit_to_vector(unit):

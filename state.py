@@ -74,8 +74,8 @@ class Unit:
   resources = 0
 
   def to_str(self):
-    return ("type: " + str(self.type) +
-            ", id: " + str(self.id) +
+    return ("id: " + str(self.id) +
+            ", type: " + str(self.type) +
             ", x: " + str(self.x) +
             ", y: " + str(self.y) +
             ", health: " + str(self.health) +
@@ -197,28 +197,7 @@ class State():
       self.state_map[k] = v
     if self.state_map.frame != None:
       self._parse_frame() # Refresh units etc.
-
-    # Compute if the battle's over and who won.
-
-    # Should check if micro_battles mode.
-    self.battle_just_ended = False
-    # friendly_units = self.get_friendly_units()
-    # enemy_units = self.get_enemy_units()
-    friendly_count = 0 if not self.friendly_units else len(self.friendly_units)
-    enemy_count = 0 if not self.enemy_units else len(self.enemy_units)
-    # enemy_count = len(self.enemy_units)
-    if self.state_map.deaths != None:
-      for uid in self.state_map.deaths:
-        if self.friendly_units and uid in self.friendly_units:
-          friendly_count -= 1
-        elif self.enemy_units and uid in self.enemy_units:
-          enemy_count -= 1
-        else:
-          raise Exception("Unknown death uid.")
-    if friendly_count == 0 or enemy_count == 0:
-      self.battle_just_ended = True
-      self.battle_won = enemy_count == 0
-
+    self._check_battle_ended()
 
 
   def _parse_frame(self):
@@ -235,6 +214,7 @@ class State():
     num_players = sc.next_int()
     for i in range(0, num_players):
       player_id = sc.next_int()
+      print "player_id = " + str(player_id)
       # self.units[player_id] = []
       num_units = sc.next_int()
 
@@ -247,9 +227,9 @@ class State():
         units[unit.id] = unit
 
       if player_id == self.state_map.player_id:
-        friendly_units = units
+        self.friendly_units = units
       elif num_players == 2:
-        enemy_units = units
+        self.enemy_units = units
       else:
         raise Exception("If there's more than 2 players of units, we NFI who enemy is.")
 
@@ -262,6 +242,27 @@ class State():
     # TODO Reward & Terminal
 
 
+  def _check_battle_ended(self):
+    # TODO only check if micro_battles mode.
+    # Compute if the battle's over and whos won.
+    self.battle_just_ended = False
+    # friendly_units = self.get_friendly_units()
+    # enemy_units = self.get_enemy_units()
+    friendly_count = 0 if not self.friendly_units else len(self.friendly_units)
+    enemy_count = 0 if not self.enemy_units else len(self.enemy_units)
+    # enemy_count = len(self.enemy_units)
+    if self.state_map.deaths != None:
+      for uid in self.state_map.deaths:
+        if self.friendly_units and uid in self.friendly_units:
+          friendly_count -= 1
+        elif self.enemy_units and uid in self.enemy_units:
+          enemy_count -= 1
+        # sometimes the dead unit ID is already removed from the lists,
+        # then we have to look in prev state to discern who died.
+    if friendly_count == 0 or enemy_count == 0:
+      self.battle_just_ended = True
+      self.battle_won = enemy_count == 0
+
   def pretty_print(self):
     print "State:"
     for (k,v) in self.state_map.items():
@@ -270,10 +271,10 @@ class State():
 
     print "friendly_units:"
     if self.friendly_units:
-      print '\n'.join(map(str,self.friendly_units))
+      print '\n'.join(map(str,self.friendly_units.values()))
 
     print "enemy_units:"
     if self.enemy_units:
-      print '\n'.join(map(str,self.enemy_units))
+      print '\n'.join(map(str,self.enemy_units.values()))
     print ""
 
