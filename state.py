@@ -141,13 +141,12 @@ class Resource:
 class State():
 
   state_map = None
-  # units = None
+
   #   """ Map of units keyed by ID """
   friendly_units = None
   #   """ Map of units keyed by ID """
   enemy_units = None
-  # friendly_player_id = None
-  # enemy_player_id = None
+
   battle_ended = None
   battle_won = None
 
@@ -156,39 +155,6 @@ class State():
     if self.state_map.frame != None:
       self._parse_frame() # Get units etc.
 
-  # def get_friendly_units(self):
-  #   """ Map of units keyed by ID """
-  #   self._set_friendly_player_id()
-  #   if self.units is None: return {}
-  #   if not self.units.has_key(self.friendly_player_id): return {} # Has no units
-  #   return self.units[self.friendly_player_id]
-
-  # def get_enemy_units(self):
-  #   """ Map of units keyed by ID """
-  #   self._try_set_enemy_player_id()
-  #   if not self.enemy_player_id: return {}
-  #   if not self.units.has_key(self.enemy_player_id): return {} # Has no units
-  #   return self.units[self.enemy_player_id]
-
-  # def _set_friendly_player_id(self):
-  #   if self.friendly_player_id is not None:
-  #     return
-  #   if self.state_map.player_id is None:
-  #     raise Exception("no player_id to map to friendly_player_id")
-  #   self.friendly_player_id = self.state_map.player_id
-
-  # def _try_set_enemy_player_id(self):
-  #   if self.enemy_player_id is not None: return
-  #   if self.units is None: return
-  #   # Assume that there are two unit lists and one belongs to enemy.
-  #   all_player_ids = self.units.keys()
-  #   if len(all_player_ids) > 2 or self.state_map.player_id is None in all_player_ids:
-  #     raise Exception("Can't get enemy unit from state that has more than 2 player IDs, or not one of which is friendly ID")
-  #   # Maybe we haven't seen any enemy units yet.
-  #   if len(all_player_ids) != 2:
-  #     return
-  #   all_player_ids.remove(self.state_map.player_id)
-  #   self.enemy_player_id = all_player_ids[0]
 
   def update(self, new_state):
     # Assumes new_state contains values for all time-dependent fields.
@@ -246,11 +212,8 @@ class State():
     # TODO only check if micro_battles mode.
     # Compute if the battle's over and whos won.
     self.battle_just_ended = False
-    # friendly_units = self.get_friendly_units()
-    # enemy_units = self.get_enemy_units()
     friendly_count = 0 if not self.friendly_units else len(self.friendly_units)
     enemy_count = 0 if not self.enemy_units else len(self.enemy_units)
-    # enemy_count = len(self.enemy_units)
     if self.state_map.deaths != None:
       for uid in self.state_map.deaths:
         if self.friendly_units and uid in self.friendly_units:
