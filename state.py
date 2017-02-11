@@ -58,9 +58,7 @@ class Unit:
   energy = None
 
   maxCD = None
-  groundCD = None
 
-  airCD = None
   idle = None
   visible = None
 
@@ -75,11 +73,14 @@ class Unit:
   size = None
 
   groundATK = None
-  airATK = None
   groundDmgType = None
-  airDmgType = None
   groundRange = None
+  groundCD = None
+
+  airATK = None
+  airDmgType = None
   airRange = None
+  airCD = None
 
   orders = None
 

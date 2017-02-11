@@ -13,9 +13,11 @@ import math
 
 MOVES = [(5,0), (-5,0), (0,5), (0,-5), (3,3), (3,-3), (-3,3), (-3,-3)]
 MOVE_RANGE = (70,150)
+FRIENDLY_TENSOR_SIZE = 7
+ENEMY_TENSOR_SIZE = 3
 MAX_FRIENDLY_UNITS = 1 # 5 for marines
 MAX_ENEMY_UNITS = 1 # 5 for marines
-INP_SHAPE = MAX_FRIENDLY_UNITS * 6 + MAX_ENEMY_UNITS * 3
+INP_SHAPE = MAX_FRIENDLY_UNITS * FRIENDLY_TENSOR_SIZE + MAX_ENEMY_UNITS * ENEMY_TENSOR_SIZE
 OUT_SHAPE = 9 + MAX_ENEMY_UNITS
 V = True  # Verbose
 
@@ -320,8 +322,11 @@ class TFBot:
     if len(friendly_units) > MAX_FRIENDLY_UNITS: friendly_units = friendly_units[:MAX_FRIENDLY_UNITS]
     if len(enemy_units) > MAX_ENEMY_UNITS: enemy_units = enemy_units[:MAX_ENEMY_UNITS]
 
-    friendly_tensor = TFBot.pack_unit_tensor(TFBot.units_to_tensor(friendly_units, True), 6, MAX_FRIENDLY_UNITS)
-    enemy_tensor = TFBot.pack_unit_tensor(TFBot.units_to_tensor(enemy_units, False), 3, MAX_ENEMY_UNITS)
+    friendly_tensor = TFBot.pack_unit_tensor(
+        TFBot.units_to_tensor(friendly_units, True), FRIENDLY_TENSOR_SIZE, MAX_FRIENDLY_UNITS)
+
+    enemy_tensor = TFBot.pack_unit_tensor(
+        TFBot.units_to_tensor(enemy_units, False), ENEMY_TENSOR_SIZE, MAX_ENEMY_UNITS)
 
     # ts = friendly_tensor + enemy_tensor
     # return
