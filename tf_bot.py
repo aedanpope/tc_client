@@ -140,7 +140,7 @@ class TFBot:
     # This is because marine attacks take 2 frames, and so it can finish an attack started in a prev frame.
     # Need to make the current order an input into the NN so it can learn to return order-0 (no new order)
     # if already performing a good attack.
-    # if self.n % 2 != 1: return []
+    if self.n % 2 != 1: return []
     inp = TFBot.state_to_input(state)
     num_friendly_units = len(state.friendly_units)
     num_enemy_units = len(state.enemy_units)
