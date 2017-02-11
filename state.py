@@ -57,7 +57,6 @@ class Unit:
 
   energy = None
 
-  maxCD = None
 
   idle = None
   visible = None
@@ -75,12 +74,15 @@ class Unit:
   groundATK = None
   groundDmgType = None
   groundRange = None
+  # https://bwapi.github.io/class_b_w_a_p_i_1_1_unit_interface.html#a5023cedeb7a1393b454cdbf172ae57a1
   groundCD = None
 
   airATK = None
   airDmgType = None
   airRange = None
   airCD = None
+
+  maxCD = None # Seems to apply to both ground and air attack?
 
   orders = None
 
@@ -103,6 +105,10 @@ class Unit:
 
   @staticmethod
   def next_unit_from_scanner(sc):
+    # Property vals are read from SC code here:
+    # https://github.com/TorchCraft/TorchCraft/blob/master/BWEnv/src/controller.cc#L786
+    # Controller::addUnit()
+
     u = Unit()
     u.id = sc.next_int()
     u.x = sc.next_int()

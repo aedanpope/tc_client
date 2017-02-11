@@ -13,7 +13,7 @@ import math
 
 MOVES = [(5,0), (-5,0), (0,5), (0,-5), (3,3), (3,-3), (-3,3), (-3,-3)]
 MOVE_RANGE = (70,150)
-FRIENDLY_TENSOR_SIZE = 7
+FRIENDLY_TENSOR_SIZE = 6
 ENEMY_TENSOR_SIZE = 3
 MAX_FRIENDLY_UNITS = 1 # 5 for marines
 MAX_ENEMY_UNITS = 1 # 5 for marines
@@ -358,6 +358,7 @@ class TFBot:
         is_guard = order_type in [2,3] #
         is_move = order_type == 6  #
         is_attack = order_type == 10 #
+      # unit_vector = unit_vector + [int(is_guard), int(is_move), int(is_attack), float(unit.groundCD) / unit.maxCD]
       unit_vector = unit_vector + [int(is_guard), int(is_move), int(is_attack)]
 
     return unit_vector
