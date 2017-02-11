@@ -13,13 +13,13 @@ import math
 
 MOVES = [(5,0), (-5,0), (0,5), (0,-5), (3,3), (3,-3), (-3,3), (-3,-3)]
 MOVE_RANGE = (70,150)
-FRIENDLY_TENSOR_SIZE = 6
+FRIENDLY_TENSOR_SIZE = 7
 ENEMY_TENSOR_SIZE = 3
 MAX_FRIENDLY_UNITS = 1 # 5 for marines
 MAX_ENEMY_UNITS = 1 # 5 for marines
 INP_SHAPE = MAX_FRIENDLY_UNITS * FRIENDLY_TENSOR_SIZE + MAX_ENEMY_UNITS * ENEMY_TENSOR_SIZE
 OUT_SHAPE = 9 + MAX_ENEMY_UNITS
-V = True  # Verbose
+V = False  # Verbose
 
 
 # Learning and env params:
@@ -362,8 +362,8 @@ class TFBot:
         is_guard = order_type in [2,3] #
         is_move = order_type == 6  #
         is_attack = order_type == 10 #
-      # unit_vector = unit_vector + [int(is_guard), int(is_move), int(is_attack), float(unit.groundCD) / unit.maxCD]
-      unit_vector = unit_vector + [int(is_guard), int(is_move), int(is_attack)]
+      unit_vector = unit_vector + [int(is_guard), int(is_move), int(is_attack), float(unit.groundCD) / unit.maxCD]
+      # unit_vector = unit_vector + [int(is_guard), int(is_move), int(is_attack)]
 
     return unit_vector
 
