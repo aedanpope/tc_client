@@ -7,6 +7,7 @@
 from map import Map
 from scanner import Scanner
 
+V = False
 
 """ See BWAPI::UnitTypes::Enum::Enum """
 UNIT_TYPE_Terran_Marine = 0
@@ -172,7 +173,7 @@ class State():
     # And frame packing here:
     # https://github.com/TorchCraft/TorchCraft/blob/master/BWEnv/src/controller.cc#L555
 
-    print "Parsing frame string:"
+    if V: print "Parsing frame string:"
     sc = Scanner(self.state_map.frame)
 
     # Units
@@ -180,7 +181,7 @@ class State():
     num_players = sc.next_int()
     for i in range(0, num_players):
       player_id = sc.next_int()
-      print "player_id = " + str(player_id)
+      if V: print "player_id = " + str(player_id)
       # self.units[player_id] = []
       num_units = sc.next_int()
 
@@ -190,6 +191,7 @@ class State():
       for j in range(0, num_units):
         unit = Unit.next_unit_from_scanner(sc)
         if (unit.type == UNIT_TYPE_Special_Map_Revealer): continue
+        if (unit.id in self.state_map.deaths): continue
         units[unit.id] = unit
 
       if player_id == self.state_map.player_id:
@@ -206,7 +208,6 @@ class State():
     # TODO Bullets
 
     # TODO Reward & Terminal
-
 
   def _check_battle_ended(self):
     # TODO only check if micro_battles mode.

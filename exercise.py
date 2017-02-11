@@ -4,6 +4,8 @@ from tc_client import TorchClient
 from tf_bot import TFBot
 from focus_fire_bot import FocusFireBot
 
+V = False
+
 
 if __name__ == '__main__':
 
@@ -12,7 +14,9 @@ if __name__ == '__main__':
 
   tc = TorchClient(hostname, port)
 
-  tc.initial_map = 'Maps/BroodWar/micro/m5v5_c_far.scm'
+  # tc.initial_map = 'Maps/BroodWar/micro/m5v5_c_far.scm'
+  # tc.initial_map = 'Maps/BroodWar/micro/Marine1vZergling1_c_far.scm'
+  tc.initial_map = 'Maps/BroodWar/micro/Marine1vZergling1_20s.scm'
   tc.window_pos = [100, 100]
   tc.window_size = [640, 480]
   tc.mode.micro_battles = True
@@ -49,27 +53,27 @@ if __name__ == '__main__':
     update = tc.receive()
 
     # Inspect tc.state and figure out what to do.
-    tc.state.pretty_print()
+    if V: tc.state.pretty_print()
 
     if tc.state.battle_just_ended:
       if tc.state.battle_won:
         battles_won += 1
       total_battles += 1
-      print "\nBATTLE ENDED"
-      print ""
+      if V: print "\nBATTLE ENDED"
+      if V: print ""
 
-    print "total_battles = " + str(total_battles)
-    print "battles_won = " + str(battles_won)
+    if V: print "total_battles = " + str(total_battles)
+    if V: print "battles_won = " + str(battles_won)
     # Populate commands.
     unit_commands = bot.get_commands(tc.state);
     commands = [[tc_client.CMD.command_unit_protected] + unit_command for unit_command in unit_commands]
-    print "commands = " + str(commands)
+    if V: print "commands = " + str(commands)
 
     tc_client.CMD.command_unit_protected
 
     # Send the orders.
     tc.send(commands)
     x += 1
-    # time.sleep(0.5)
+    # time.sleep(0.1)
 
     # if x == 2: break

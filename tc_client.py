@@ -11,6 +11,8 @@ from scanner import Scanner
 # GLOBAL CONSTANTS.
 ###################
 
+V = False
+
 # TorchCraft API version
 PROTOCOL_VERSION = "16"
 
@@ -195,7 +197,7 @@ class TorchClient:
       raise Exception("can't send another message without receiving one first")
 
     msg = ':'.join([','.join([str(c) for c in cmd]) for cmd in commands])
-    print "Sending message: '" + msg + "'"
+    if V: print "Sending message: '" + msg + "'"
 
     self.socket.send(msg)
     self.sent_message = True
@@ -213,7 +215,7 @@ class TorchClient:
     msg = self.socket.recv()
     self.sent_message = False
     self.state.update(TorchClient._unpack_message(msg))
-    print "Got State Update."
+    if V: print "Got State Update."
 
 
   def close(self):
