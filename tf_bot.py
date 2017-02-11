@@ -13,9 +13,11 @@ import math
 
 MOVES = [(5,0), (-5,0), (0,5), (0,-5), (3,3), (3,-3), (-3,3), (-3,-3)]
 MOVE_RANGE = (70,150)
-MAX_UNITS = 1 # 5 for marines
-INP_SHAPE = MAX_UNITS * 2 * 3
-OUT_SHAPE = 9 + MAX_UNITS
+MAX_FRIENDLY_UNITS = 1 # 5 for marines
+MAX_ENEMY_UNITS = 1 # 5 for marines
+INP_SHAPE = MAX_FRIENDLY_UNITS * 6 + MAX_ENEMY_UNITS * 3
+OUT_SHAPE = 9 + MAX_ENEMY_UNITS
+V = True  # Verbose
 
 
 # Learning params:
@@ -68,12 +70,14 @@ class TFBot:
   total_reward = None
 
   n = None
+  v = True # verbose
 
   def __init__(self):
     self.setup_q_nn()
 
     self.sess = tf.InteractiveSession()
-    self.sess.run(tf.initialize_all_variables())
+    # self.sess.run(tf.initialize_all_variables())
+    self.sess.run(tf.global_variables_initializer())
 
     self.total_reward = 0
     self.n = 0
@@ -101,11 +105,21 @@ class TFBot:
     # h_fc1 = tf.nn.relu(softmax)
     # self.tf_q = tf.matmul(self.tf_inp, w)
 
+    ## MATMUL
+    # self.tf_q = tf.matmul(self.tf_inp,
+    #                tf.Variable(tf.random_uniform([INP_SHAPE,OUT_SHAPE],0,W_INIT)))
 
+    ## 1-layer RELU
+    # self.tf_q = tf.nn.relu(tf.matmul(self.tf_inp,
+    #                tf.Variable(tf.random_uniform([INP_SHAPE,OUT_SHAPE],0,W_INIT))))
+
+    ## 2-layer RELU
     layer_1 = tf.nn.relu(tf.matmul(self.tf_inp,
                    tf.Variable(tf.random_uniform([INP_SHAPE,20],0,W_INIT))))
     self.tf_q = tf.nn.relu(tf.matmul(layer_1,
                    tf.Variable(tf.random_uniform([20,OUT_SHAPE],0,W_INIT))))
+
+    # TODO: Consider adding multiple channels.
 
     self.tf_action = tf.argmax(self.tf_q,1)
 
@@ -119,6 +133,11 @@ class TFBot:
   def get_commands(self, state):
     # print "n = " + str(self.n)
     self.n += 1
+
+    # Skip every second frame.
+    # This is because marine attacks take 2 frames, and so it can finish an attack started in a prev frame.
+    # Need to make the current order an input into the NN so it can learn to return order-0 (no new order)
+    # if already performing a good attack.
     if self.n % 2 != 1: return []
     inp = TFBot.state_to_input(state)
     num_friendly_units = len(state.friendly_units)
@@ -126,10 +145,17 @@ class TFBot:
     friendly_hp = 0 if not state.friendly_units else state.friendly_units.values()[0].health
     enemy_hp = 0 if not state.enemy_units else state.enemy_units.values()[0].health
 
+    if V: print "inp = " + str(inp)
+    if V: print "inp_len = " + str(len(inp[0]))
+
+    self.v = num_enemy_units != 0 and num_friendly_units != 0
+
+    # if self.v:
+    # print "inp = " + str(inp)
+    # print "inp_len = " + str(len(inp[0]))
+
     # Choose an action by greedily (with e chance of random action) from the Q-network
     # We need all the Q vals for learning.
-    print "inp = " + str(inp)
-    print "inp_len = " + str(len(inp[0]))
     action,q = self.sess.run([self.tf_action, self.tf_q],
                                    feed_dict={self.tf_inp:inp})
     action = action[0]
@@ -161,6 +187,7 @@ class TFBot:
         #
       elif (num_enemy_units == 1 and num_friendly_units == 1):
         if (friendly_hp - enemy_hp - self.prev_hp_diff > 0):
+          # reward = float(REWARD)/20
           reward = float(REWARD)/20
           # reward = np.sign(friendly_hp - enemy_hp - self.prev_hp_diff) * float(REWARD)/20
       # else:
@@ -168,6 +195,15 @@ class TFBot:
         # print "unit_diff reward"
       # reward = (num_friendly_units - num_enemy_units) - self.prev_unit_diff
       self.total_reward += reward
+
+      print "inp = " + str(inp)
+      print "inp_len = " + str(len(inp[0]))
+      print "prev_unit_diff = " + str(self.prev_unit_diff)
+      print "prev_hp_diff = " + str(self.prev_hp_diff)
+      print "action = " + str(action)
+      print "total_reward = " + str(self.total_reward)
+      print "explore = " + str(self.explore)
+
       self.train(self.prev_inp, self.prev_action, self.prev_q, q, reward)
 
     if num_enemy_units != 0 and num_friendly_units != 0:
@@ -178,17 +214,17 @@ class TFBot:
       self.prev_unit_diff = num_friendly_units - num_enemy_units
       self.prev_hp_diff = friendly_hp - enemy_hp
 
-      print "prev_unit_diff = " + str(self.prev_unit_diff)
-      print "prev_hp_diff = " + str(self.prev_hp_diff)
-      print "action = " + str(action)
-      print "total_reward = " + str(self.total_reward)
-      print "explore = " + str(self.explore)
+      # print "prev_unit_diff = " + str(self.prev_unit_diff)
+      # print "prev_hp_diff = " + str(self.prev_hp_diff)
+      # print "action = " + str(action)
+      # print "total_reward = " + str(self.total_reward)
+      # print "explore = " + str(self.explore)
     else:
       # But we don't train on the action taken this cycle if all the friendly or enemy units were already dead.
       # Because our actions in those states are bogus, and also half the input is zeros, so it makes the network
       # over-rotated on noise.
       self.prev_action = None
-      print "already all dead, don't train this move"
+      # print "already all dead, don't train this move"
 
     # Outputs
     return TFBot.output_to_command(action, state)
@@ -196,6 +232,7 @@ class TFBot:
 
   def train(self, prev_inp, prev_action, prev_q, next_q, reward):
       # Train with loss from Bellman equation
+      # if self.v:
       print "TRAIN"
       print "reward = " + str(reward)
       print "prev_inp = " + str(prev_inp)
@@ -256,7 +293,7 @@ class TFBot:
       # 9-13 = attack unit num 0-4
       a = action
       # a = np.argmax(y[i])
-      if a == 0: continue
+      if a == 0: continue # No new order, so prob continue with current order.
       elif 1 <= a and a <= 8:
         del_x, del_y = MOVES[a-1]
         move_x = TFBot.constrain(friendly.x + del_x, MOVE_RANGE)
@@ -280,32 +317,49 @@ class TFBot:
     # second 5 are enemy units
     friendly_units = state.friendly_units.values()
     enemy_units = state.enemy_units.values()
-    if len(friendly_units) > MAX_UNITS: friendly_units = friendly_units[:MAX_UNITS]
-    if len(enemy_units) > MAX_UNITS: enemy_units = enemy_units[:MAX_UNITS]
+    if len(friendly_units) > MAX_FRIENDLY_UNITS: friendly_units = friendly_units[:MAX_FRIENDLY_UNITS]
+    if len(enemy_units) > MAX_ENEMY_UNITS: enemy_units = enemy_units[:MAX_ENEMY_UNITS]
 
-    friendly_tensor = TFBot.pack_unit_tensor(TFBot.units_to_tensor(friendly_units), MAX_UNITS)
-    enemy_tensor = TFBot.pack_unit_tensor(TFBot.units_to_tensor(enemy_units), MAX_UNITS)
+    friendly_tensor = TFBot.pack_unit_tensor(TFBot.units_to_tensor(friendly_units, True), 6, MAX_FRIENDLY_UNITS)
+    enemy_tensor = TFBot.pack_unit_tensor(TFBot.units_to_tensor(enemy_units, False), 3, MAX_ENEMY_UNITS)
+
     # ts = friendly_tensor + enemy_tensor
     # return
     # return [ [x] for x in itertools.chain.from_iterable(friendly_tensor + enemy_tensor)]
     return [list(itertools.chain.from_iterable(friendly_tensor + enemy_tensor))]
 
-  @staticmethod
-  def units_to_tensor(units):
-    return [TFBot.unit_to_vector(unit) for unit in units]
 
   @staticmethod
-  def unit_to_vector(unit):
-    return [
+  def units_to_tensor(units, is_friendly):
+    return [TFBot.unit_to_vector(unit, is_friendly) for unit in units]
+
+
+  @staticmethod
+  def unit_to_vector(unit, is_friendly):
+    unit_vector = [
             # 1.0 if is_friendly else -1.0,
             TFBot.norm(unit.x, (MOVE_RANGE)),
             TFBot.norm(unit.y, (MOVE_RANGE)),
             TFBot.norm(unit.health, (0, 40)),
             ]
 
+    if is_friendly:
+      is_guard = False
+      is_move = False
+      is_attack = False
+      # Seee https://bwapi.github.io/namespace_b_w_a_p_i_1_1_orders_1_1_enum.html
+      if len(unit.orders) > 0:
+        order_type = unit.orders[0].type
+        is_guard = order_type in [2,3] #
+        is_move = order_type == 6  #
+        is_attack = order_type == 10 #
+      unit_vector = unit_vector + [int(is_guard), int(is_move), int(is_attack)]
+
+    return unit_vector
+
   @staticmethod
-  def pack_unit_tensor(unit_tensor, final_rows):
-    return unit_tensor + [[0,0,0] for i in range(len(unit_tensor), final_rows)]
+  def pack_unit_tensor(unit_tensor, tensor_shape, final_rows):
+    return unit_tensor + [[0 for i in range(0, tensor_shape)] for i in range(len(unit_tensor), final_rows)]
 
   @staticmethod
   def norm(x, min_max):

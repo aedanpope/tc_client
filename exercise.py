@@ -37,6 +37,10 @@ if __name__ == '__main__':
       [tc_client.CMD.set_cmd_optim, 1],
       [tc_client.CMD.set_combine_frames, 5],
     ])
+  # update = tc.receive()
+  # tc.send([
+  #     [tc_client.CMD.restart, 1],
+  #   ])
 
   x = 0
   focus_uid = -1

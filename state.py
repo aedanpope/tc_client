@@ -31,6 +31,17 @@ class Order:
     o.targetY = sc.next_int()
     return o
 
+  def to_str(self):
+    return ("type: " + str(self.type) +
+            ", targetId: " + str(self.targetId) +
+            ", x: " + str(self.targetX) +
+            ", y: " + str(self.targetY) +
+            ", first_frame: " + str(self.first_frame))
+  def __str__(self):
+    return self.to_str()
+  def __repr__(self):
+    return self.to_str()
+
 
 class Unit:
   id = None
@@ -120,10 +131,10 @@ class Unit:
     u.groundRange = sc.next_int()
     u.airRange = sc.next_int()
 
-    orders = []
+    u.orders = []
     num_orders = sc.next_int()
     for i in range(0, num_orders):
-      orders.append(Order.next_order_from_scanner(sc))
+      u.orders.append(Order.next_order_from_scanner(sc))
 
     u.velocityX = sc.next_float()
     u.velocityY = sc.next_float()
