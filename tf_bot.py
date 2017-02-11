@@ -22,11 +22,11 @@ OUT_SHAPE = 9 + MAX_ENEMY_UNITS
 V = True  # Verbose
 
 
-# Learning params:
+# Learning and env params:
 
 # Exploration: probability of taking a random action instead of that suggested by the q-network.
 EPS = 0.9
-EPS_EPOCH = 0.999
+EPS_EPOCH = 0.9995
 # Dicount-rate: how much we depreciate future rewards in value for each state step.
 # GAMMA = 0.99
 GAMMA = 0.99
@@ -34,6 +34,8 @@ GAMMA = 0.99
 W_INIT = 0.01
 # Reward val
 REWARD = 1
+MICRO_REWARD = 0.1
+FRAMES_PER_ACTION = 1
 
 
 ## Generally, try and keep everything in the [-1,1] range.
@@ -140,7 +142,9 @@ class TFBot:
     # This is because marine attacks take 2 frames, and so it can finish an attack started in a prev frame.
     # Need to make the current order an input into the NN so it can learn to return order-0 (no new order)
     # if already performing a good attack.
-    if self.n % 2 != 1: return []
+    if self.n % FRAMES_PER_ACTION == 1: return []
+
+
     inp = TFBot.state_to_input(state)
     num_friendly_units = len(state.friendly_units)
     num_enemy_units = len(state.enemy_units)
@@ -190,7 +194,7 @@ class TFBot:
       elif (num_enemy_units == 1 and num_friendly_units == 1):
         if (friendly_hp - enemy_hp - self.prev_hp_diff > 0):
           # reward = float(REWARD)/20
-          reward = float(REWARD)/20
+          reward = MICRO_REWARD
           # reward = np.sign(friendly_hp - enemy_hp - self.prev_hp_diff) * float(REWARD)/20
       # else:
         # reward = float(REWARD)/100
@@ -245,9 +249,9 @@ class TFBot:
       target_q = prev_q
       target_q[0, prev_action] = reward + GAMMA*np.max(next_q)
       print "target_q2 = " + str(target_q)
-      if all(r[0] == 0 for r in target_q):
-        print "all zeros = " + str(target_q)
-        sys.exit()
+      # if all(r[0] == 0 for r in target_q):
+      #   print "all zeros = " + str(target_q)
+      #   sys.exit()
 
       if False:
         cur_v = target_q[0, prev_action]
