@@ -88,6 +88,13 @@ class Unit:
 
   resources = 0
 
+  def get_life(self):
+    return self.health + self.shield
+
+  def get_max_life(self):
+    return self.max_health + self.max_shield
+
+
   def to_str(self):
     return ("id: " + str(self.id) +
             ", type: " + str(self.type) +

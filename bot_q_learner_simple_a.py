@@ -1,3 +1,4 @@
+# Learns from a single frame.
 
 
 import tc_client
@@ -9,24 +10,6 @@ import random
 import itertools
 import sys
 import math
-
-## TODO:
-# - make a network to predict future state given an action & current state, then use that
-#   to predict better Q-values on the fly, and calculate rewards based on lost/gained HP across
-#   a longer period of time (it's not a reward to get a hit now to lose a hit next frame)
-# - Basically - the NN needs some way to understand the directional movement of units, velocity.
-# - change the scenario so kiting is easier and can be less perfect, but that not-kiting is a hard loss.
-# - Need a combination of small and large rewards (greedy). Be greedy, but only to help explore.
-# - Consider applying less Reward for less HP diff.
-#  More
-# - apply reward to actions taken after a positive hp_diff that maintain that diff (reward agent for maintaining a lead)
-# - increase chance of explore if the network doesn't generate any actions with strong reward
-# - randomly chose with relative probability from small set of actions with strong reward.
-# - train NN to predict state, and take the scores on possible future states as weights. So prob of new state = score/sum(all_state_scores)
-#   then chose action with highest future EV.
-
-
-
 
 MOVES = [(6,0), (-6,0), (0,6), (0,-6), (4,4), (4,-4), (-4,4), (-4,-4)]
 # MOVES = [(10,0), (-10,0), (0,10), (0,-10), (7,7), (7,-7), (-7,7), (-7,-7)]

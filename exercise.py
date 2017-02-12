@@ -1,7 +1,8 @@
 import time
 import tc_client
 from tc_client import TorchClient
-from tf_bot import TFBot
+import tf_bot
+import bot_q_learner_simple_a
 from focus_fire_bot import FocusFireBot
 
 V = False
@@ -15,8 +16,9 @@ if __name__ == '__main__':
   tc = TorchClient(hostname, port)
 
   # tc.initial_map = 'Maps/BroodWar/micro/m5v5_c_far.scm'
-  # tc.initial_map = 'Maps/BroodWar/micro/Marine1vZergling1_c_far.scm'
-  tc.initial_map = 'Maps/BroodWar/micro/Marine1vZergling1_20s.scm'
+  # # tc.initial_map = 'Maps/BroodWar/micro/Marine1vZergling1_c_far.scm'
+  # tc.initial_map = 'Maps/BroodWar/micro/Marine1vZergling1_20s.scm'
+  tc.initial_map = 'Maps/BroodWar/micro/Vulture_v_Zealot.scm'
   tc.window_pos = [100, 100]
   tc.window_size = [640, 480]
   tc.mode.micro_battles = True
@@ -46,8 +48,8 @@ if __name__ == '__main__':
   focus_uid = -1
 
   # bot = FocusFireBot()
-
-  bot = TFBot()
+  bot = tf_bot.Bot()
+  # bot = bot_q_learner_simple_a.Bot()
 
   update = tc.receive() # Get the first state so we can see our starting units.
   tc.send([])
