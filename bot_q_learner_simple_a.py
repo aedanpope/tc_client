@@ -1,5 +1,8 @@
 # Learns from a single frame.
 
+# Marine v Zergling - can get ~25%
+# Vulture v Zealot - 0%
+
 
 import tc_client
 import argparse
