@@ -69,6 +69,21 @@ def bias_variable(shape):
   initial = tf.constant(0.1, shape=shape)
   return tf.Variable(initial)
 
+class battle:
+  stages = None
+
+class stage:
+  state = None
+  action_taken = None
+  cont_q = None # Contemporary Q
+
+  friendly_hp = None
+  enemy_hp = None
+
+  is_end = None
+  won = None
+
+
 
 class Bot:
   # Infra
@@ -95,6 +110,9 @@ class Bot:
 
   n = None
   v = True # verbose
+
+  battles = []
+  current_battle = None
 
   def __init__(self):
     self.setup_q_nn()
