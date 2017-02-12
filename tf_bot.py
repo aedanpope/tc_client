@@ -196,6 +196,10 @@ class TFBot:
           # reward = float(REWARD)/20
           reward = MICRO_REWARD
           # reward = np.sign(friendly_hp - enemy_hp - self.prev_hp_diff) * float(REWARD)/20
+      # elif (num_friendly_units < num_enemy_units and self.prev_unit_diff == 0):
+      #   # Apparently negative rewards don't work in Q-learning, since the propagation is "max".
+      #   reward = -REWARD/2
+
       # else:
         # reward = float(REWARD)/100
         # print "unit_diff reward"
