@@ -10,6 +10,17 @@ import sys
 import math
 
 
+## TODO:
+# - cut this as a standalone bot, e.g. boq_q_learner_simple_a.py
+# - make a network to predict future state given an action & current state, then use that
+#   to predict better Q-values on the fly, and calculate rewards based on lost/gained HP across
+#   a longer period of time (it's not a reward to get a hit now to lose a hit next frame)
+# - Basically - the NN needs some way to understand the directional movement of units, velocity.
+# - change the scenario so kiting is easier and can be less perfect, but that not-kiting is a hard loss.
+# - Need a combination of small and large rewards (greedy). Be greedy, but only to help explore.
+# - Consider applying less Reward for less HP diff.
+# -
+
 
 MOVES = [(5,0), (-5,0), (0,5), (0,-5), (3,3), (3,-3), (-3,3), (-3,-3)]
 MOVE_RANGE = (70,150)
