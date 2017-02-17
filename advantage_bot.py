@@ -36,7 +36,7 @@ INITIAL_EXPLORE = 0.9
 EXPLORE_FACTOR = 0.9995
 # Dicount-rate: how much we depreciate future rewards in value for each state step.
 # GAMMA = 0.99
-GAMMA = 0.99
+GAMMA = 0.9
 # Initial weights on neuron connections, need to start small so max output of NN isn't >> reward.
 W_INIT = 0.01
 # Reward val
@@ -85,6 +85,17 @@ class Battle:
     return self.stages[index]
   def __getitem__(self, key):
       return self.stages.__getitem__(key)
+
+  def to_str(self):
+    return ("Battle {" +
+            "stages: " + str(self.stages) +
+            ", is_end: " + str(self.is_end) +
+            ", is_won: " + str(self.is_won) +
+            "}")
+  def __str__(self):
+    return self.to_str()
+  def __repr__(self):
+    return self.to_str()
 
 
 # Assumes one unit per side.
@@ -221,10 +232,22 @@ class Bot:
     action,q = self.sess.run([self.tf_action, self.tf_q],
                                    feed_dict={self.tf_inp:inp})
     action = action[0]
-    # Sometimes get a random action instead of what the model tells us, to explore.
-    if random.random() < self.explore:
-        action = random.randint(0,OUT_SHAPE-1)
-    self.explore *= EXPLORE_FACTOR
+    q_val = q[0][action]
+    print "q = " + str(q)
+    print "action = " + str(action)
+    print "q_val = " + str(q_val)
+    # Sometimes get a random action instead of what the model tells us, to explore,
+    # or if our action is shit.
+    if q_val < 0.005:
+      action = random.randint(0,OUT_SHAPE-1)
+      print "NFI"
+    elif random.random() < self.explore:
+      action = random.randint(0,OUT_SHAPE-1)
+      print "EXP"
+      self.explore *= EXPLORE_FACTOR
+    else:
+      self.explore *= EXPLORE_FACTOR
+      print "ACT"
     print "explore = " + str(self.explore)
     print "total_reward = " + str(self.total_reward)
 
@@ -247,11 +270,11 @@ class Bot:
     for i in range(0, battle.size()):
       battle[i].reward = 0
 
-    ### 1. Instantaneous Reward
-    # action on i is rewarded for an improvement in advantage from i to i+1
-    for i in range(0, battle.size() - 1):
-      adv = Bot.calculate_advantage(battle[i], battle[i+1])
-      battle[i].reward += 0.1 if adv > 0 else 0
+    # ### 1. Instantaneous Reward
+    # # action on i is rewarded for an improvement in advantage from i to i+1
+    # for i in range(0, battle.size() - 1):
+    #   adv = Bot.calculate_advantage(battle[i], battle[i+1])
+    #   battle[i].reward += 0.1 if adv > 0 else 0
 
     # ### 2. Earn an advantage in 5 frames.
     # # action on i is rewarded for an improvement in advantage from i to i+5
@@ -263,11 +286,26 @@ class Bot:
     # action on i is rewarded for sustaining an advantage from i-5 to i
     #
     # So reward taking actions after earning an advantage that mean we don't lose it.
-    MT = 3
-    for i in range(MT, battle.size() - 1):
-      initial_adv = Bot.calculate_advantage(battle[i-MT], battle[i-MT+1])
-      final_adv = Bot.calculate_advantage(battle[i-MT], battle[i])
-      battle[i].reward += 0.01 if (initial_adv > 0 and final_adv >= initial_adv) else 0
+    # MT = 3
+    # for i in range(MT, battle.size() - 1):
+    #   initial_adv = Bot.calculate_advantage(battle[i-MT], battle[i-MT+1])
+    #   final_adv = Bot.calculate_advantage(battle[i-MT], battle[i])
+    #   battle[i].reward += 0.1 if (initial_adv > 0 and final_adv >= initial_adv) else 0
+    MT = 9
+    for i in range(10, battle.size() - 1):
+      adv_0 = Bot.calculate_advantage(battle[i-10], battle[i-9])
+      adv_3 = Bot.calculate_advantage(battle[i-10], battle[i-6])
+      adv_6 = Bot.calculate_advantage(battle[i-10], battle[i-3])
+      adv_9 = Bot.calculate_advantage(battle[i-10], battle[i])
+      # if adv_0 > 0
+      #   print "advs = " + str([adv_0, adv_3, adv_6, adv_9])
+        # print "all = " + all(adv_k > adv_0 for adv_k in [adv_3, adv_6, adv_9])
+      if adv_0 > 0 and all(adv_k >= adv_0 for adv_k in [adv_3, adv_6, adv_9]):
+        battle[i].reward += 0.1
+        battle[i-3].reward += 0.1
+        battle[i-6].reward += 0.1
+        battle[i-9].reward += 0.1
+      # battle[i].reward += 0.1 if (initial_adv > 0 and final_adv >= initial_adv) else 0
 
     # HMM THIS makes things too cautious. No reward for taking risks.
 
@@ -391,10 +429,16 @@ class Bot:
 
     extra = [[0,0]]
     if battle.size() >= 2:
-      prev_enemy = battle[-2].state.enemy_units[1]
-      extra = [[
-            Bot.norm(prev_enemy.x, (X_MOVE_RANGE)),
-            Bot.norm(prev_enemy.y, (Y_MOVE_RANGE))]]
+
+      # print "battle = " + str(battle)
+      # print "battle[-2] = " + str(battle[-2])
+      # print "state.enemy_units = " + str(battle[-2].state.enemy_units.values())
+      prev_foes = battle[-2].state.enemy_units.values()
+      if len(prev_foes) >= 1:
+        prev_enemy = prev_foes[0]
+        extra = [[
+              Bot.norm(prev_enemy.x, (X_MOVE_RANGE)),
+              Bot.norm(prev_enemy.y, (Y_MOVE_RANGE))]]
 
 
     # ts = friendly_tensor + enemy_tensor

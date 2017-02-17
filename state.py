@@ -203,6 +203,8 @@ class State():
 
     # Units
     self.units = {}
+    self.friendly_units = {}
+    self.enemy_units = {}
     num_players = sc.next_int()
     for i in range(0, num_players):
       player_id = sc.next_int()
