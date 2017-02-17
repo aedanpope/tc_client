@@ -22,7 +22,8 @@ FRIENDLY_TENSOR_SIZE = 7
 ENEMY_TENSOR_SIZE = 3
 MAX_FRIENDLY_UNITS = 1 # 5 for marines
 MAX_ENEMY_UNITS = 1 # 5 for marines
-INP_SHAPE = MAX_FRIENDLY_UNITS * FRIENDLY_TENSOR_SIZE + MAX_ENEMY_UNITS * ENEMY_TENSOR_SIZE
+EXTRA = 2
+INP_SHAPE = MAX_FRIENDLY_UNITS * FRIENDLY_TENSOR_SIZE + MAX_ENEMY_UNITS * ENEMY_TENSOR_SIZE + EXTRA
 OUT_SHAPE = 9 + MAX_ENEMY_UNITS
 V = False  # Verbose
 
@@ -89,6 +90,7 @@ class Battle:
 # Assumes one unit per side.
 class Stage:
   # Ctor vars.
+  state = None
   friendly_hp = None # Friendly HP in the stage
   enemy_hp = None # Enemy HP in the stage
   is_end = None
@@ -103,6 +105,7 @@ class Stage:
   reward = None
 
   def __init__(self, state):
+    self.state = state
 
     # Derived values:
     self.friendly_hp = 0 if not state.friendly_units else state.friendly_units.values()[0].get_life()
@@ -209,7 +212,7 @@ class Bot:
 
     # We still do this even if at the end, so that we have next_q values for the terminal state.
     # Else figure out what action to take next.
-    inp = Bot.state_to_input(state)
+    inp = Bot.state_to_input(state, self.current_battle)
     if V: print "inp = " + str(inp)
     if V: print "inp_len = " + str(len(inp[0]))
 
@@ -368,7 +371,7 @@ class Bot:
 
 
   @staticmethod
-  def state_to_input(state):
+  def state_to_input(state, battle):
     """ returns [1,30] """
     # """ returns [10,3] """
     #max 10 units
@@ -382,13 +385,22 @@ class Bot:
     friendly_tensor = Bot.pack_unit_tensor(
         Bot.units_to_tensor(friendly_units, True), FRIENDLY_TENSOR_SIZE, MAX_FRIENDLY_UNITS)
 
+
     enemy_tensor = Bot.pack_unit_tensor(
         Bot.units_to_tensor(enemy_units, False), ENEMY_TENSOR_SIZE, MAX_ENEMY_UNITS)
+
+    extra = [[0,0]]
+    if battle.size() >= 2:
+      prev_enemy = battle[-2].state.enemy_units[1]
+      extra = [[
+            Bot.norm(prev_enemy.x, (X_MOVE_RANGE)),
+            Bot.norm(prev_enemy.y, (Y_MOVE_RANGE))]]
+
 
     # ts = friendly_tensor + enemy_tensor
     # return
     # return [ [x] for x in itertools.chain.from_iterable(friendly_tensor + enemy_tensor)]
-    return [list(itertools.chain.from_iterable(friendly_tensor + enemy_tensor))]
+    return [list(itertools.chain.from_iterable(friendly_tensor + enemy_tensor + extra))]
 
 
   @staticmethod
