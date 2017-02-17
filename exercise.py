@@ -3,6 +3,7 @@ import tc_client
 from tc_client import TorchClient
 import tf_bot
 import bot_q_learner_simple_a
+import advantage_bot
 from focus_fire_bot import FocusFireBot
 
 V = False
@@ -48,7 +49,8 @@ if __name__ == '__main__':
   focus_uid = -1
 
   # bot = FocusFireBot()
-  bot = tf_bot.Bot()
+  # bot = tf_bot.Bot()
+  bot = advantage_bot.Bot()
   # bot = bot_q_learner_simple_a.Bot()
 
   update = tc.receive() # Get the first state so we can see our starting units.
