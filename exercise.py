@@ -27,7 +27,6 @@ if __name__ == '__main__':
   tc.window_size = [640, 480]
   tc.mode.micro_battles = True
   tc.mode.replay = False
-  tc.mode.replay = False
 
   tc.connect()
 
@@ -36,17 +35,20 @@ if __name__ == '__main__':
   # We prob want to store a local version of the gamestate as well in another class,
   # Since we get back some crazy shit.
 
+  # tc.send([
+  #     [tc_client.CMD.restart, 1],
+  #   ])
+  # update = tc.receive()
+
   tc.send([
-      [tc_client.CMD.set_speed, 5],
-      [tc_client.CMD.set_gui, 1],
+      # [tc_client.CMD.set_speed, 13],
+      [tc_client.CMD.set_speed, 1],
+      # [tc_client.CMD.set_gui, 0],
+      # [tc_client.CMD.set_gui, 1],
       [tc_client.CMD.set_frameskip, 5],
       [tc_client.CMD.set_cmd_optim, 1],
       [tc_client.CMD.set_combine_frames, 5],
     ])
-  # update = tc.receive()
-  # tc.send([
-  #     [tc_client.CMD.restart, 1],
-  #   ])
 
   x = 0
   focus_uid = -1

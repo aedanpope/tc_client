@@ -295,9 +295,9 @@ class Bot:
         self.total_battles += 1
         if self.current_battle.is_won:
           self.total_wins += 1
-        last_10_results.append(self.current_battle.is_won)
-        if (len(last_10_results) > 10):
-          last_10_results = last_10_results[-10:]
+        self.last_10_results.append(self.current_battle.is_won)
+        if (len(self.last_10_results) > 10):
+          self.last_10_results = self.last_10_results[-10:]
 
         self.current_battle = Battle()
         self.battles.append(self.current_battle)
