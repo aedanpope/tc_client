@@ -346,9 +346,9 @@ class Bot:
 
     # First calculate rewards.
     rewards = np.zeros(battle.size())
-    for i in range(1, battle.size()):
-      # Advantage is a percentage of total life difference. 1.0 in a single round = won the game.
-      rewards[i-1] = 1 * Bot.calculate_advantage(battle[i-1], battle[i])
+    # for i in range(1, battle.size()):
+    #   # Advantage is a percentage of total life difference. 1.0 in a single round = won the game.
+    #   rewards[i-1] = 0.1 * Bot.calculate_advantage(battle[i-1], battle[i])
 
     # Now give gradually discounted rewards to earlier actions.
     if battle.is_won:
@@ -357,11 +357,11 @@ class Bot:
       rewards[-1] += -1
 
     for i in reversed(xrange(0, rewards.size-1)):
-      self.total_reward += rewards[i]
-      if rewards[i] > 0:
-        self.total_reward_p += rewards[i]
+      self.total_reward += rewards[i+1]
+      if rewards[i+1] > 0:
+        self.total_reward_p += rewards[i+1]
       else:
-        self.total_reward_n += rewards[i]
+        self.total_reward_n += rewards[i+1]
       rewards[i] = rewards[i] * GAMMA + rewards[i+1]
 
     rewards = rewards[:-1] # We drop the input/action/reward for the end state.
