@@ -12,6 +12,8 @@
 # I should implement them all as hyperparameters and experiment.
 #
 # 3. Explore better reward functions, as per "Advanced Approaches" at the bottom of the exploration article above.
+#
+# 4. AC3!@
 
 
 
