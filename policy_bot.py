@@ -32,7 +32,7 @@ MAX_ENEMY_UNITS = 1 # 5 for marines
 INP_SHAPE = MAX_FRIENDLY_UNITS * FRIENDLY_TENSOR_SIZE + MAX_ENEMY_UNITS * ENEMY_TENSOR_SIZE
 HID_SHAPE = 20 # Hidden layer shape.
 OUT_SHAPE = 5 + MAX_ENEMY_UNITS
-V = False  # Verbose
+V_PER_FRAME = False  # Verbose
 LEARNING_RATE = 0.01
 
 # Learning and env params:
@@ -268,6 +268,9 @@ class Bot:
   current_battle = None
   MAX_FRIENDLY_LIFE = None
   MAX_ENEMY_LIFE = None
+  total_battles = 0
+  total_wins = 0
+  last_10_results = []
 
   def __init__(self):
     self.agent = Agent()
@@ -279,9 +282,25 @@ class Bot:
 
 
   def update_battle(self, stage):
-    if self.current_battle is None or self.current_battle[-1].is_end:
+    if not self.current_battle:
+      self.total_battles += 1
       self.current_battle = Battle()
       self.battles.append(self.current_battle)
+
+    if self.current_battle.is_end:
+      if stage.is_end:
+        return # Don't accumulate more end states.
+      else:
+        # Make a new battle.
+        self.total_battles += 1
+        if self.current_battle.is_won:
+          self.total_wins += 1
+        last_10_results.append(self.current_battle.is_won)
+        if (len(last_10_results) > 10):
+          last_10_results = last_10_results[-10:]
+
+        self.current_battle = Battle()
+        self.battles.append(self.current_battle)
     self.current_battle.add_stage(stage)
 
   def get_commands(self, game_state):
@@ -299,15 +318,15 @@ class Bot:
     if not self.current_battle.is_end:
       # Figure out what action to take next.
       inp_state = Bot.battle_to_input(self.current_battle)
-      if V: print "inp = " + str(inp_state)
+      if V_PER_FRAME: print "inp = " + str(inp_state)
 
       # Take action based on a probability returned from the policy network.
       agent_out = self.agent.get_output(inp_state)
       tmp = np.random.choice(agent_out,p=agent_out) # pick i based on probabilities
       action = np.argmax(agent_out == tmp)
-      print "agent_out = " + str(agent_out)
-      print "tmp = " + str(tmp)
-      print "action = " + str(action)
+      if V_PER_FRAME: print "agent_out = " + str(agent_out)
+      if V_PER_FRAME: print "tmp = " + str(tmp)
+      if V_PER_FRAME: print "action = " + str(action)
       stage.inp = inp_state
       stage.action = action
       commands = Bot.output_to_command(action, game_state)
@@ -315,11 +334,11 @@ class Bot:
     # TODO train the same number of positive and negative battles.
     # I guess we have to find a positive battle first.
 
-    print ("total_reward = " + str(self.total_reward) +
-      ", total_reward_p = " + str(self.total_reward_p) +
-      ", total_reward_n = " + str(self.total_reward_n))
+    if V_PER_FRAME: print ("total_reward = " + str(self.total_reward) +
+                           ", total_reward_p = " + str(self.total_reward_p) +
+                           ", total_reward_n = " + str(self.total_reward_n))
 
-    if self.current_battle.is_end:
+    if self.current_battle.is_end and not self.current_battle.trained:
       # Once the battle is over, train for it wholistically:
       self.train_battle(self.current_battle)
 
@@ -338,6 +357,12 @@ class Bot:
       return
 
     print "battle.size() = " + str(battle.size())
+    print "total_battles = " + str(self.total_battles)
+    print "total_wins = " + str(self.total_wins)
+    print "win_ratio = " + str(self.total_wins / float(self.total_battles))
+    print "last_10 = " + str(sum(self.last_10_results)) + " / " + str(len(self.last_10_results))
+
+
     if not battle[0].friendly_unit or not battle[0].enemy_unit:
       raise Exception("No units in initial battle state.")
     global MAX_FRIENDLY_LIFE
@@ -347,9 +372,6 @@ class Bot:
 
     # First calculate rewards.
     rewards = np.zeros(battle.size())
-    # for i in range(1, battle.size()):
-    #   # Advantage is a percentage of total life difference. 1.0 in a single round = won the game.
-    #   rewards[i-1] = 0.1 * Bot.calculate_advantage(battle[i-1], battle[i])
 
     # Final reward = 1 for winning, -0.5 to 0.5 for doing some damage.
     # if battle.is_won:
@@ -456,8 +478,8 @@ class Bot:
     if f0.id != f1.id or e0.id != e1.id:
       raise Exception("Units in adjoind frames must have the same IDs, we assume one unit.")
 
-    print "f1 = " + str(f1)
-    print "e1 = " + str(e1)
+    if V_PER_FRAME: print "f1 = " + str(f1)
+    if V_PER_FRAME: print "e1 = " + str(e1)
 
     return (Bot.unit_to_vector(f0, True) + Bot.unit_to_vector(f1, True) +
             Bot.unit_to_vector(e0, False) + Bot.unit_to_vector(e1, False))
