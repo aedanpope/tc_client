@@ -2,6 +2,16 @@
 # https://github.com/awjuliani/DeepRL-Agents/blob/master/Vanilla-Policy.ipynb
 # https://medium.com/@awjuliani/super-simple-reinforcement-learning-tutorial-part-2-ded33892c724#.axhe0juti
 # http://karpathy.github.io/2016/05/31/rl/
+#
+# TODO:
+# 1. DNQ network first:
+# https://medium.com/@awjuliani/simple-reinforcement-learning-with-tensorflow-part-4-deep-q-networks-and-beyond-8438a3e2b8df#.1p0qomyrr
+#
+# 2.Way better exploration ala
+# https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-7-action-selection-strategies-for-exploration-d3a97b7cceaf#.rr1b6cl6e
+#
+
+
 
 
 import tc_client
