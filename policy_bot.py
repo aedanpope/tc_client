@@ -9,7 +9,9 @@
 #
 # 2.Way better exploration ala
 # https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-7-action-selection-strategies-for-exploration-d3a97b7cceaf#.rr1b6cl6e
+# I should implement them all as hyperparameters and experiment.
 #
+# 3. Explore better reward functions, as per "Advanced Approaches" at the bottom of the exploration article above.
 
 
 
