@@ -100,8 +100,8 @@ class Unit:
             ", type: " + str(self.type) +
             ", x: " + str(self.x) +
             ", y: " + str(self.y) +
-            ", health: " + str(self.health) +
-            ", max_health: " + str(self.max_health) +
+            ", life: " + str(self.get_life()) +
+            ", max_life: " + str(self.get_max_life()) +
             ", pixel_x: " + str(self.pixel_x) +
             ", pixel_y: " + str(self.pixel_y))
   def __str__(self):

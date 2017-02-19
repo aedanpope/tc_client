@@ -19,14 +19,16 @@ import math
 MOVES = [(6,0), (-6,0), (0,6), (0,-6), (4,4), (4,-4), (-4,4), (-4,-4)]
 # MOVES = [(10,0), (-10,0), (0,10), (0,-10), (7,7), (7,-7), (-7,7), (-7,-7)]
 # friendly starts at (70,140), enemy starts at (100,140)
-X_MOVE_RANGE = (40,140) # X_MOVE_RANGE and Y_MOVE_RANGE should be the same magnitude.
-Y_MOVE_RANGE = (90,210)
-FRIENDLY_TENSOR_SIZE = 7
-ENEMY_TENSOR_SIZE = 3
+X_MOVE_RANGE = (60,120) # X_MOVE_RANGE and Y_MOVE_RANGE should be the same magnitude.
+Y_MOVE_RANGE = (110,190)
+MAX_FRIENDLY_LIFE = None
+MAX_ENEMY_LIFE = None
+
+FRIENDLY_TENSOR_SIZE = 14
+ENEMY_TENSOR_SIZE = 8
 MAX_FRIENDLY_UNITS = 1 # 5 for marines
 MAX_ENEMY_UNITS = 1 # 5 for marines
-EXTRA = 2
-INP_SHAPE = MAX_FRIENDLY_UNITS * FRIENDLY_TENSOR_SIZE + MAX_ENEMY_UNITS * ENEMY_TENSOR_SIZE + EXTRA
+INP_SHAPE = MAX_FRIENDLY_UNITS * FRIENDLY_TENSOR_SIZE + MAX_ENEMY_UNITS * ENEMY_TENSOR_SIZE
 HID_SHAPE = 20 # Hidden layer shape.
 OUT_SHAPE = 9 + MAX_ENEMY_UNITS
 V = False  # Verbose
@@ -69,6 +71,7 @@ class Battle:
   stages = None
   is_end = None
   is_won = None
+  trained = False
 
   def __init__(self):
     self.stages = []
@@ -107,11 +110,13 @@ class Battle:
 # Assumes one unit per side.
 class Stage:
   # Ctor vars.
-  state = None
-  friendly_hp = None # Friendly HP in the stage
-  enemy_hp = None # Enemy HP in the stage
+  # state = None
+  friendly_life = None # Friendly HP in the stage
+  enemy_life = None # Enemy HP in the stage
   is_end = None
   is_won = None
+  friendly_unit = None
+  enemy_unit = None
 
   # Vars added later:
   inp = None # Input into the neural network.
@@ -122,14 +127,17 @@ class Stage:
   reward = None
 
   def __init__(self, state):
-    self.state = state
+    # self.state = state
+
+    self.friendly_unit = 0 if not state.friendly_units else state.friendly_units.values()[0]
+    self.enemy_unit = 0 if not state.enemy_units else state.enemy_units.values()[0]
 
     # Derived values:
-    self.friendly_hp = 0 if not state.friendly_units else state.friendly_units.values()[0].get_life()
-    self.enemy_hp = 0 if not state.enemy_units else state.enemy_units.values()[0].get_life()
-    self.is_end = self.friendly_hp == 0 or self.enemy_hp == 0
+    self.friendly_life = 0 if not state.friendly_units else state.friendly_units.values()[0].get_life()
+    self.enemy_life = 0 if not state.enemy_units else state.enemy_units.values()[0].get_life()
+    self.is_end = self.friendly_life == 0 or self.enemy_life == 0
     if self.is_end:
-      self.is_won = self.friendly_hp > 0
+      self.is_won = self.friendly_life > 0
     self.reward = 0
 
   def to_str(self):
@@ -137,8 +145,8 @@ class Stage:
             "inp: " + str(self.inp) +
             ", q: " + str(self.q) +
             ", action: " + str(self.action) +
-            ", friendly_hp: " + str(self.friendly_hp) +
-            ", enemy_hp: " + str(self.enemy_hp) +
+            ", friendly_life: " + str(self.friendly_life) +
+            ", enemy_life: " + str(self.enemy_life) +
             ", is_end: " + str(self.is_end) +
             ", is_won: " + str(self.is_won) +
             "}")
@@ -153,7 +161,7 @@ class Agent:
 
   # TF-class objects.
   state_in = None # Prob should rename input to state to be consistent with Bellman.
-  out = None
+  output = None
   # tf_target_q = None
   # action = None
   # tf_train = None
@@ -170,7 +178,7 @@ class Agent:
     # These lines established the feed-forward part of the network. The agent takes a state and produces an action.
     self.state_in= tf.placeholder(shape=[None,INP_SHAPE],dtype=tf.float32)
     hidden = slim.fully_connected(self.state_in,HID_SHAPE,biases_initializer=None,activation_fn=tf.nn.relu)
-    self.out = slim.fully_connected(hidden,OUT_SHAPE,activation_fn=tf.nn.softmax,biases_initializer=None)
+    self.output = slim.fully_connected(hidden,OUT_SHAPE,activation_fn=tf.nn.softmax,biases_initializer=None)
     # self.action = tf.argmax(self.out,1)
 
     # The next six lines establish the training proceedure. We feed the reward and chosen action into the network
@@ -181,14 +189,14 @@ class Agent:
     # TODO Understand the formula here a little better.
 
     # Make a 1-hot vector that corresponds to the action chosen?
-    indexes = tf.range(0, tf.shape(self.out)[0]) * tf.shape(self.out)[1] + self.action_holder
+    indexes = tf.range(0, tf.shape(self.output)[0]) * tf.shape(self.output)[1] + self.action_holder
     # Grab the output value that corresponds to that 1-hot vector?
-    responsible_outputs = tf.gather(tf.reshape(self.out, [-1]), indexes)
+    responsible_outputs = tf.gather(tf.reshape(self.output, [-1]), indexes)
 
     # Take the log of the value in output corresponds to the action.
     # This forumula allows the network to accept Positive and Negative rewards/advantages.
     # Taking a Log I think will stop divergence.
-    # Loss = Log(π)*A
+    # Loss = Log(output_vals)*Advantage
     # https://medium.com/@awjuliani/super-simple-reinforcement-learning-tutorial-part-1-fd544fab149#.kbxmx7lfm
     self.loss = -tf.reduce_mean(tf.log(responsible_outputs)*self.reward_holder)
 
@@ -221,7 +229,7 @@ class Agent:
   # tmp = np.random.choice(agent_out,p=agent_out) # pick i based on probabilities
   # action = np.argmax(tmp == tmp)
   def get_output(self, state):
-    return sess.run(self.output,feed_dict={self.state_in:[state]})[0]
+    return self.sess.run(self.output,feed_dict={self.state_in:[state]})[0]
 
 
   # Get the gradients to train network for each (state,action,reward) tuple.
@@ -229,7 +237,7 @@ class Agent:
     feed_dict={self.state_in:states,
                self.action_holder:actions,
                self.reward_holder:rewards}
-    return sess.run(self.gradients, feed_dict=feed_dict)
+    return self.sess.run(self.gradients, feed_dict=feed_dict)
 
 
   # Caller can batch gradients and apply a bunch at once.
@@ -238,13 +246,16 @@ class Agent:
   # or you could store sum of a few gradients, and call train once for a batch.
   def train_with_gradients(self, gradients):
     feed_dict = dict(zip(self.gradient_holders, gradients))
-    sess.run(self.update_batch, feed_dict=feed_dict)
+    self.sess.run(self.update_batch, feed_dict=feed_dict)
 
 
 class Bot:
   # Infra
 
   agent = None
+  total_reward = None
+  total_reward_p = None
+  total_reward_n = None
 
   # Learning params
   explore = None
@@ -254,11 +265,14 @@ class Bot:
 
   battles = []
   current_battle = None
-  total_reward = None
+  MAX_FRIENDLY_LIFE = None
+  MAX_ENEMY_LIFE = None
 
   def __init__(self):
     self.agent = Agent()
     self.total_reward = 0
+    self.total_reward_p = 0
+    self.total_reward_n = 0
     self.n = 0
     self.explore = INITIAL_EXPLORE
 
@@ -270,6 +284,7 @@ class Bot:
     self.current_battle.add_stage(stage)
 
   def get_commands(self, game_state):
+    commands = []
     # Skip every second frame.
     # This is because marine attacks take 2 frames, and so it can finish an attack started in a prev frame.
     # Need to make the current order an input into the NN so it can learn to return order-0 (no new order)
@@ -280,79 +295,85 @@ class Bot:
     stage = Stage(game_state)
     self.update_battle(stage)
 
-    # if stage.current_battle.is_end:
-    #   return []
-    #   # Waiting for next battle to start
+    if not self.current_battle.is_end:
+      # Figure out what action to take next.
+      inp_state = Bot.battle_to_input(self.current_battle)
+      if V: print "inp = " + str(inp_state)
 
-    # Else figure out what action to take next.
-    inp_state = Bot.battle_to_input(self.current_battle)
-    if V: print "inp = " + str(inp_state)
-
-    # Take action based on a probability returned from the policy network.
-    agent_out = self.agent.get_output(inp_state)
-    tmp = np.random.choice(agent_out,p=agent_out) # pick i based on probabilities
-    action = np.argmax(tmp == tmp)
-    print "action = " + str(action)
-
-    # action = action[0]
-    # q_val = q[0][action]
-    # print "q = " + str(q)
-    # print "q_val = " + str(q_val)
-    # # Sometimes get a random action instead of what the model tells us, to explore,
-    # # or if our action is shit.
-    # if q_val < 0.005:
-    #   action = random.randint(0,OUT_SHAPE-1)
-    #   print "NFI"
-    # elif random.random() < self.explore:
-    #   action = random.randint(0,OUT_SHAPE-1)
-    #   print "EXP"
-    #   self.explore *= EXPLORE_FACTOR
-    # else:
-    #   self.explore *= EXPLORE_FACTOR
-    #   print "ACT"
-    # print "explore = " + str(self.explore)
-    stage.inp = inp_state
-    # stage.q = q
-    stage.action = action
+      # Take action based on a probability returned from the policy network.
+      agent_out = self.agent.get_output(inp_state)
+      tmp = np.random.choice(agent_out,p=agent_out) # pick i based on probabilities
+      action = np.argmax(agent_out == tmp)
+      print "agent_out = " + str(agent_out)
+      print "tmp = " + str(tmp)
+      print "action = " + str(action)
+      stage.inp = inp_state
+      stage.action = action
+      commands = Bot.output_to_command(action, game_state)
 
     # TODO train the same number of positive and negative battles.
     # I guess we have to find a positive battle first.
 
-    print "total_reward = " + str(self.total_reward)
+    print ("total_reward = " + str(self.total_reward) +
+      ", total_reward_p = " + str(self.total_reward_p) +
+      ", total_reward_n = " + str(self.total_reward_n))
 
     if self.current_battle.is_end:
       # Once the battle is over, train for it wholistically:
       self.train_battle(self.current_battle)
 
     # Outputs
-    return Bot.output_to_command(action, game_state)
+    return commands
 
   def train_battle(self, battle):
     print "\nTRAIN BATTLE"
 
+    if battle.trained:
+      raise Exception("Battle already trained")
+    else:
+      battle.trained = True
+    if battle.size() == 1:
+      print "skipping training empty battle"
+      return
+
+    print "battle.size() = " + str(battle.size())
+    if not battle[0].friendly_unit or not battle[0].enemy_unit:
+      raise Exception("No units in initial battle state.")
+    global MAX_FRIENDLY_LIFE
+    global MAX_ENEMY_LIFE
+    MAX_FRIENDLY_LIFE = battle[0].friendly_unit.get_max_life()
+    MAX_ENEMY_LIFE = battle[0].enemy_unit.get_max_life()
+
     # First calculate rewards.
-
     rewards = np.zeros(battle.size())
-
     for i in range(1, battle.size()):
-      rewards[i-1] = MINI_REWARD * calculate_advantage(battle[i-1], battle[i])
-      self.total_reward += rewards[i-1]
+      # Advantage is a percentage of total life difference. 1.0 in a single round = won the game.
+      rewards[i-1] = 1 * Bot.calculate_advantage(battle[i-1], battle[i])
 
     # Now give gradually discounted rewards to earlier actions.
     if battle.is_won:
       rewards[-1] += 1
-    for i in reversed(xrange(0, rewards.size-1)):
-      rewards[i] = running_reward * GAMMA + rewards[i+1]
+    else:
+      rewards[-1] += -1
 
+    for i in reversed(xrange(0, rewards.size-1)):
+      self.total_reward += rewards[i]
+      if rewards[i] > 0:
+        self.total_reward_p += rewards[i]
+      else:
+        self.total_reward_n += rewards[i]
+      rewards[i] = rewards[i] * GAMMA + rewards[i+1]
+
+    rewards = rewards[:-1] # We drop the input/action/reward for the end state.
     inputs = []
     actions = []
     for i in range(0, battle.size()-1):
       inputs.append(battle[i].inp)
       actions.append(battle[i].action)
 
-    grads = agent.get_gradients(inputs, actions, rewards)
+    grads = self.agent.get_gradients(inputs, actions, rewards)
     # TODO: Consider only training once ever ~5 rounds, using a grad_buffer
-    agent.train_with_gradients(grads)
+    self.agent.train_with_gradients(grads)
 
     # for idx,grad in enumerate(grads):
     #     grad_buffer[idx] += grad
@@ -363,14 +384,12 @@ class Bot:
 
 
   @staticmethod
-  def calculate_advantage(stage_a, stage_b):
+  def calculate_advantage(stage_0, stage_1):
     """ What is the delata in advantage in moving from stage_a to stage_b """
     # Improvement in hp difference is good.
-    a_hp_diff = stage_a.friendly_hp - stage_a.enemy_hp
-    b_hp_diff = stage_b.friendly_hp - stage_b.enemy_hp
-    # HP vulture=80, zealot = 160
-    # Damage 20 + 16, single round is gonna be about 20hp diff
-    return (b_hp_diff - a_hp_diff)/float(20)
+    hp_pct_0 = (float(stage_0.friendly_life)/MAX_FRIENDLY_LIFE) - (float(stage_0.enemy_life)/MAX_ENEMY_LIFE)
+    hp_pct_1 = (float(stage_1.friendly_life)/MAX_FRIENDLY_LIFE) - (float(stage_1.enemy_life)/MAX_ENEMY_LIFE)
+    return hp_pct_1 - hp_pct_0
 
 
   @staticmethod
@@ -379,7 +398,7 @@ class Bot:
     """ action in [0 .. 13]"""
     commands = []
 
-    if !state.friendly_units or !state.enemy_units: return commands
+    if not state.friendly_units or not state.enemy_units: return commands
 
     friendly = state.friendly_units.values()[0]
     enemy = state.enemy_units.values()[0]
@@ -418,21 +437,21 @@ class Bot:
 
     i0 = -2
     i1 = -1
-    if battle.size() == 1
+    if battle.size() == 1:
       i0 = -1 # Just use the first frame for both, so there's no movement.
 
-    f0 = battle[i0].state.friendly_units.values()[0]
-    f1 = battle[i1].state.friendly_units.values()[0]
-    e0 = battle[i0].state.enemy_units.values()[0]
-    e1 = battle[i1].state.enemy_units.values()[0]
+    f0 = battle[i0].friendly_unit
+    f1 = battle[i1].friendly_unit
+    e0 = battle[i0].enemy_unit
+    e1 = battle[i1].enemy_unit
     if f0.id != f1.id or e0.id != e1.id:
       raise Exception("Units in adjoind frames must have the same IDs, we assume one unit.")
 
     print "f1 = " + str(f1)
     print "e1 = " + str(e1)
 
-    return [Bot.unit_to_vector(f0, True) + Bot.unit_to_vector(f1, True) +
-            Bot.unit_to_vector(e0, False) + Bot.unit_to_vector(e1, False)]
+    return (Bot.unit_to_vector(f0, True) + Bot.unit_to_vector(f1, True) +
+            Bot.unit_to_vector(e0, False) + Bot.unit_to_vector(e1, False))
 
 
   @staticmethod
