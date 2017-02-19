@@ -9,6 +9,7 @@ import argparse
 import sys
 import numpy as np
 import tensorflow as tf
+import tensorflow.contrib.slim as slim
 import random
 import itertools
 import sys
@@ -26,9 +27,10 @@ MAX_FRIENDLY_UNITS = 1 # 5 for marines
 MAX_ENEMY_UNITS = 1 # 5 for marines
 EXTRA = 2
 INP_SHAPE = MAX_FRIENDLY_UNITS * FRIENDLY_TENSOR_SIZE + MAX_ENEMY_UNITS * ENEMY_TENSOR_SIZE + EXTRA
+HID_SHAPE = 20 # Hidden layer shape.
 OUT_SHAPE = 9 + MAX_ENEMY_UNITS
 V = False  # Verbose
-
+LEARNING_RATE = 0.01
 
 # Learning and env params:
 
@@ -37,14 +39,16 @@ INITIAL_EXPLORE = 0.9
 # How much we multiply the current explore value by each cycle.
 EXPLORE_FACTOR = 0.9995
 # Dicount-rate: how much we depreciate future rewards in value for each state step.
-# GAMMA = 0.99
-GAMMA = 0.9
+GAMMA = 0.99
+# GAMMA = 0.9
 # Initial weights on neuron connections, need to start small so max output of NN isn't >> reward.
 W_INIT = 0.01
 # Reward val
 REWARD = 1
 MINI_REWARD = 0.1
 MICRO_REWARD = 0.01
+
+
 FRAMES_PER_ACTION = 1
 
 
@@ -144,17 +148,103 @@ class Stage:
     return self.to_str()
 
 
-class Bot:
-  # Infra
+class Agent:
   sess = None
 
-  # Q-network config.
   # TF-class objects.
-  tf_inp = None # Prob should rename input to state to be consistent with Bellman.
-  tf_q = None
-  tf_target_q = None
-  tf_action = None
-  tf_train = None
+  state_in = None # Prob should rename input to state to be consistent with Bellman.
+  out = None
+  # tf_target_q = None
+  # action = None
+  # tf_train = None
+  reward_holder = None
+  action_holder = None
+  gradient_holders = None
+  gradients = None
+  update_batch = None
+
+  def __init__(self):
+    # Policy agent from
+    # https://github.com/awjuliani/DeepRL-Agents/blob/master/Vanilla-Policy.ipynb
+
+    # These lines established the feed-forward part of the network. The agent takes a state and produces an action.
+    self.state_in= tf.placeholder(shape=[None,INP_SHAPE],dtype=tf.float32)
+    hidden = slim.fully_connected(self.state_in,HID_SHAPE,biases_initializer=None,activation_fn=tf.nn.relu)
+    self.out = slim.fully_connected(hidden,OUT_SHAPE,activation_fn=tf.nn.softmax,biases_initializer=None)
+    # self.action = tf.argmax(self.out,1)
+
+    # The next six lines establish the training proceedure. We feed the reward and chosen action into the network
+    # to compute the loss, and use it to update the network.
+    self.reward_holder = tf.placeholder(shape=[None],dtype=tf.float32)
+    self.action_holder = tf.placeholder(shape=[None],dtype=tf.int32)
+
+    # TODO Understand the formula here a little better.
+
+    # Make a 1-hot vector that corresponds to the action chosen?
+    indexes = tf.range(0, tf.shape(self.out)[0]) * tf.shape(self.out)[1] + self.action_holder
+    # Grab the output value that corresponds to that 1-hot vector?
+    responsible_outputs = tf.gather(tf.reshape(self.out, [-1]), indexes)
+
+    # Take the log of the value in output corresponds to the action.
+    # This forumula allows the network to accept Positive and Negative rewards/advantages.
+    # Taking a Log I think will stop divergence.
+    # Loss = Log(π)*A
+    # https://medium.com/@awjuliani/super-simple-reinforcement-learning-tutorial-part-1-fd544fab149#.kbxmx7lfm
+    self.loss = -tf.reduce_mean(tf.log(responsible_outputs)*self.reward_holder)
+
+    tvars = tf.trainable_variables()
+    self.gradient_holders = []
+    for idx,var in enumerate(tvars):
+        placeholder = tf.placeholder(tf.float32,name=str(idx)+'_holder')
+        self.gradient_holders.append(placeholder)
+
+    # Get the gradients that should apply to every variable to minimize loss?
+    # So basically the derivative that should be applied to the network.
+    self.gradients = tf.gradients(self.loss,tvars)
+
+    # Apply those gradients with the learning rate.
+    # The caller of the agent grab .gradients for each action+reward, and then apply all the
+    # gradients at once by inputting them into gradient_holders to train.
+    # So we apply gradients in batches.
+    optimizer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE)
+    self.update_batch = optimizer.apply_gradients(zip(self.gradient_holders,tvars))
+
+    self.sess = tf.InteractiveSession()
+    self.sess.run(tf.global_variables_initializer())
+
+
+  # You prob want to call argmax(get_output())
+  # The output is an array of probability that the ith action should be taken.
+  # Example usage:
+  #
+  # agent_out = Agent.get_output(state)
+  # tmp = np.random.choice(agent_out,p=agent_out) # pick i based on probabilities
+  # action = np.argmax(tmp == tmp)
+  def get_output(self, state):
+    return sess.run(self.output,feed_dict={self.state_in:[state]})[0]
+
+
+  # Get the gradients to train network for each (state,action,reward) tuple.
+  def get_gradients(self, states, actions, rewards):
+    feed_dict={self.state_in:states,
+               self.action_holder:actions,
+               self.reward_holder:rewards}
+    return sess.run(self.gradients, feed_dict=feed_dict)
+
+
+  # Caller can batch gradients and apply a bunch at once.
+  # You could just call:
+  # train_with_gradients(get_gradients())
+  # or you could store sum of a few gradients, and call train once for a batch.
+  def train_with_gradients(self, gradients):
+    feed_dict = dict(zip(self.gradient_holders, gradients))
+    sess.run(self.update_batch, feed_dict=feed_dict)
+
+
+class Bot:
+  # Infra
+
+  agent = None
 
   # Learning params
   explore = None
@@ -167,44 +257,11 @@ class Bot:
   total_reward = None
 
   def __init__(self):
-    self.setup_q_nn()
-    self.sess = tf.InteractiveSession()
-    self.sess.run(tf.global_variables_initializer())
+    self.agent = Agent()
     self.total_reward = 0
     self.n = 0
     self.explore = INITIAL_EXPLORE
 
-  def setup_q_nn(self):
-    self.tf_inp = tf.placeholder(tf.float32, [1, INP_SHAPE])
-
-    # Options for the network topology:
-    # - Simple matrix multiplication
-    # - 1 layer RELU neurons
-    # - 2 layer RELU neurons
-
-    ## MATMUL
-    # self.tf_q = tf.matmul(self.tf_inp,
-    #                tf.Variable(tf.random_uniform([INP_SHAPE,OUT_SHAPE],0,W_INIT)))
-
-    ## 1-layer RELU
-    # self.tf_q = tf.nn.relu(tf.matmul(self.tf_inp,
-    #                tf.Variable(tf.random_uniform([INP_SHAPE,OUT_SHAPE],0,W_INIT))))
-
-    ## 2-layer RELU
-    layer_1 = tf.nn.relu(tf.matmul(self.tf_inp,
-                   tf.Variable(tf.random_uniform([INP_SHAPE,20],0,W_INIT))))
-    self.tf_q = tf.nn.relu(tf.matmul(layer_1,
-                   tf.Variable(tf.random_uniform([20,OUT_SHAPE],0,W_INIT))))
-
-    # TODO: Consider adding multiple channels.
-
-    self.tf_action = tf.argmax(self.tf_q,1)
-
-    # Obtain the loss by taking the sum of squares
-    # difference between the target and prediction Q values.
-    self.tf_target_q = tf.placeholder(tf.float32, [1, OUT_SHAPE])
-    loss = tf.reduce_sum(tf.square(self.tf_target_q - self.tf_q))
-    self.tf_train = tf.train.GradientDescentOptimizer(learning_rate=0.1).minimize(loss)
 
   def update_battle(self, stage):
     if self.current_battle is None or self.current_battle[-1].is_end:
@@ -212,7 +269,7 @@ class Bot:
       self.battles.append(self.current_battle)
     self.current_battle.add_stage(stage)
 
-  def get_commands(self, state):
+  def get_commands(self, game_state):
     # Skip every second frame.
     # This is because marine attacks take 2 frames, and so it can finish an attack started in a prev frame.
     # Need to make the current order an input into the NN so it can learn to return order-0 (no new order)
@@ -220,110 +277,89 @@ class Bot:
     self.n += 1
     if self.n % FRAMES_PER_ACTION == 1: return []
 
-    stage = Stage(state)
+    stage = Stage(game_state)
     self.update_battle(stage)
 
-    if stage.current_battle.is_end:
-      # Don't get an action.
+    # if stage.current_battle.is_end:
+    #   return []
+    #   # Waiting for next battle to start
 
-    # We still do this even if at the end, so that we have next_q values for the terminal state.
     # Else figure out what action to take next.
-    inp = Bot.state_to_input(state, self.current_battle)
-    if V: print "inp = " + str(inp)
-    if V: print "inp_len = " + str(len(inp[0]))
-
-    # Choose an action by greedily (with e chance of random action) from the Q-network
-    # We need all the Q vals for learning.
-    action,q = self.sess.run([self.tf_action, self.tf_q],
-                                   feed_dict={self.tf_inp:inp})
+    inp_state = Bot.battle_to_input(self.current_battle)
+    if V: print "inp = " + str(inp_state)
 
     # Take action based on a probability returned from the policy network.
-    action = action[0]
-    q_val = q[0][action]
-    print "q = " + str(q)
+    agent_out = self.agent.get_output(inp_state)
+    tmp = np.random.choice(agent_out,p=agent_out) # pick i based on probabilities
+    action = np.argmax(tmp == tmp)
     print "action = " + str(action)
-    print "q_val = " + str(q_val)
-    # Sometimes get a random action instead of what the model tells us, to explore,
-    # or if our action is shit.
-    if q_val < 0.005:
-      action = random.randint(0,OUT_SHAPE-1)
-      print "NFI"
-    elif random.random() < self.explore:
-      action = random.randint(0,OUT_SHAPE-1)
-      print "EXP"
-      self.explore *= EXPLORE_FACTOR
-    else:
-      self.explore *= EXPLORE_FACTOR
-      print "ACT"
-    print "explore = " + str(self.explore)
-    print "total_reward = " + str(self.total_reward)
 
-    stage.inp = inp
-    stage.q = q
+    # action = action[0]
+    # q_val = q[0][action]
+    # print "q = " + str(q)
+    # print "q_val = " + str(q_val)
+    # # Sometimes get a random action instead of what the model tells us, to explore,
+    # # or if our action is shit.
+    # if q_val < 0.005:
+    #   action = random.randint(0,OUT_SHAPE-1)
+    #   print "NFI"
+    # elif random.random() < self.explore:
+    #   action = random.randint(0,OUT_SHAPE-1)
+    #   print "EXP"
+    #   self.explore *= EXPLORE_FACTOR
+    # else:
+    #   self.explore *= EXPLORE_FACTOR
+    #   print "ACT"
+    # print "explore = " + str(self.explore)
+    stage.inp = inp_state
+    # stage.q = q
     stage.action = action
+
+    # TODO train the same number of positive and negative battles.
+    # I guess we have to find a positive battle first.
+
+    print "total_reward = " + str(self.total_reward)
 
     if self.current_battle.is_end:
       # Once the battle is over, train for it wholistically:
       self.train_battle(self.current_battle)
 
     # Outputs
-    return Bot.output_to_command(action, state)
+    return Bot.output_to_command(action, game_state)
 
   def train_battle(self, battle):
     print "\nTRAIN BATTLE"
 
     # First calculate rewards.
 
-    for i in range(0, battle.size()):
-      battle[i].reward = 0
+    rewards = np.zeros(battle.size())
 
-    # ### 1. Instantaneous Reward
-    # # action on i is rewarded for an improvement in advantage from i to i+1
-    # for i in range(0, battle.size() - 1):
-    #   adv = Bot.calculate_advantage(battle[i], battle[i+1])
-    #   battle[i].reward += 0.1 if adv > 0 else 0
+    for i in range(1, battle.size()):
+      rewards[i-1] = MINI_REWARD * calculate_advantage(battle[i-1], battle[i])
+      self.total_reward += rewards[i-1]
 
-    # ### 2. Earn an advantage in 5 frames.
-    # # action on i is rewarded for an improvement in advantage from i to i+5
-    # for i in range(0, battle.size() - 5):
-    #   adv = Bot.calculate_advantage(battle[i], battle[i+5])
-    #   battle[i].reward = MINI_REWARD if adv > 0 else 0
+    # Now give gradually discounted rewards to earlier actions.
+    if battle.is_won:
+      rewards[-1] += 1
+    for i in reversed(xrange(0, rewards.size-1)):
+      rewards[i] = running_reward * GAMMA + rewards[i+1]
 
-    ### 2. Maintain an advantage for 5 frames.
-    # action on i is rewarded for sustaining an advantage from i-5 to i
-    #
-    # So reward taking actions after earning an advantage that mean we don't lose it.
-    # MT = 3
-    # for i in range(MT, battle.size() - 1):
-    #   initial_adv = Bot.calculate_advantage(battle[i-MT], battle[i-MT+1])
-    #   final_adv = Bot.calculate_advantage(battle[i-MT], battle[i])
-    #   battle[i].reward += 0.1 if (initial_adv > 0 and final_adv >= initial_adv) else 0
-    MT = 9
-    for i in range(10, battle.size() - 1):
-      adv_0 = Bot.calculate_advantage(battle[i-10], battle[i-9])
-      adv_3 = Bot.calculate_advantage(battle[i-10], battle[i-6])
-      adv_6 = Bot.calculate_advantage(battle[i-10], battle[i-3])
-      adv_9 = Bot.calculate_advantage(battle[i-10], battle[i])
-      # if adv_0 > 0
-      #   print "advs = " + str([adv_0, adv_3, adv_6, adv_9])
-        # print "all = " + all(adv_k > adv_0 for adv_k in [adv_3, adv_6, adv_9])
-      if adv_0 > 0 and all(adv_k >= adv_0 for adv_k in [adv_3, adv_6, adv_9]):
-        battle[i].reward += 0.1
-        battle[i-3].reward += 0.1
-        battle[i-6].reward += 0.1
-        battle[i-9].reward += 0.1
-      # battle[i].reward += 0.1 if (initial_adv > 0 and final_adv >= initial_adv) else 0
+    inputs = []
+    actions = []
+    for i in range(0, battle.size()-1):
+      inputs.append(battle[i].inp)
+      actions.append(battle[i].action)
 
-    # HMM THIS makes things too cautious. No reward for taking risks.
+    grads = agent.get_gradients(inputs, actions, rewards)
+    # TODO: Consider only training once ever ~5 rounds, using a grad_buffer
+    agent.train_with_gradients(grads)
 
-    # Then train for all actions taken with given rewards.
-    for i in range(0, battle.size() - 2):
-      # stage = battle[i]
-      print "battle[i] = " + str(battle[i])
-      print "battle[i+1] = " + str(battle[i+1])
-      self.total_reward += battle[i].reward
-      self.train(battle[i].inp, battle[i].q, battle[i].action, battle[i+1].q, battle[i].reward)
-
+    # for idx,grad in enumerate(grads):
+    #     grad_buffer[idx] += grad
+    # if i % update_frequency == 0 and i != 0:
+    #   agent.train_with_gradients(grads)
+    #   for ix,grad in enumerate(gradBuffer):
+    #       gradBuffer[ix] = grad * 0
 
 
   @staticmethod
@@ -332,86 +368,42 @@ class Bot:
     # Improvement in hp difference is good.
     a_hp_diff = stage_a.friendly_hp - stage_a.enemy_hp
     b_hp_diff = stage_b.friendly_hp - stage_b.enemy_hp
-    return b_hp_diff - a_hp_diff
+    # HP vulture=80, zealot = 160
+    # Damage 20 + 16, single round is gonna be about 20hp diff
+    return (b_hp_diff - a_hp_diff)/float(20)
 
-  def train(self, inp, q, action, next_q, reward):
-    """ Train the network once to receive $reward for taking #action
-        on $inp
-    """
-    # Train with loss from Bellman equation
-    # if self.v:
-    print "TRAIN"
-    print "reward = " + str(reward)
-    print "inp = " + str(inp)
-    print "action = " + str(action)
-    print "q = " + str(q)
-    print "next_q = " + str(next_q)
-
-    target_q = q
-    target_q[0, action] = reward + GAMMA*np.max(next_q)
-    print "target_q2 = " + str(target_q)
-    # if all(r[0] == 0 for r in target_q):
-    #   print "all zeros = " + str(target_q)
-    #   sys.exit()
-
-    if False:
-      cur_v = target_q[0, action]
-      if (reward == 1):
-        new_v = reward
-      else:
-        new_v = max(0.001, GAMMA*min(1, np.max(next_q)))
-      for i in range(0, len(target_q[0])):
-        target_q[0, i] = max(0.001,min(target_q[0, i], GAMMA))
-      # new_v = reward + GAMMA*np.max(next_q)
-      print "cur_v = " + str(cur_v) + ", new_v = " + str(new_v)
-      print "delta = " + str(cur_v - new_v) + ", pc = " + str(new_v / cur_v)
-      # TODO: should there be a hyperparam learning rate here?
-      target_q[0, action] = reward + GAMMA*np.max(next_q)
-      target_q[0, action] = new_v
-      print "target_q2 = " + str(target_q)
-      if math.isnan(q[0,0]): sys.exit()
-      if new_v > 100: sys.exit()
-    # print "target_q = " + str(target_q)
-
-    # By passing inp the network will regenerate prev_q, and then apply loss where
-    # it differs from target_q - to train it to remember target_q instead of prev_q
-    self.sess.run(self.tf_train,
-                  feed_dict={self.tf_inp:inp,
-                             self.tf_target_q:target_q})
 
   @staticmethod
   def output_to_command(action, state):
     """ out_t = [14] """
     """ action in [0 .. 13]"""
-
-
-    friendly_units = state.friendly_units.values()
-    enemy_units = state.enemy_units.values()
-
-
     commands = []
-    # for i in range(0, max(len(friendly_units), 5)):
-    for i in range(0, len(friendly_units)):
-      if i == 5: break
-      friendly = friendly_units[i]
-      # one-hot
-      # 0 = do nothing
-      # 1-8 = move 5 units in dir
-      # 9-13 = attack unit num 0-4
-      a = action
-      # a = np.argmax(y[i])
-      if a == 0: continue # No new order, so prob continue with current order.
-      elif 1 <= a and a <= 8:
-        del_x, del_y = MOVES[a-1]
-        move_x = Bot.constrain(friendly.x + del_x, X_MOVE_RANGE)
-        move_y = Bot.constrain(friendly.y + del_y, Y_MOVE_RANGE)
-        commands.append([friendly.id, tc_client.UNIT_CMD.Move, -1, move_x, move_y])
-      elif 9 <= a and a <= OUT_SHAPE - 1:
-        e_index = a - 9
-        if e_index >= len(enemy_units): continue # Do nothing, can't attack unit that doesn't exist.
-        commands.append([friendly.id, tc_client.UNIT_CMD.Attack_Unit, enemy_units[e_index].id])
-      else:
-        raise Exception("Invalid action: " + str(a))
+
+    if !state.friendly_units or !state.enemy_units: return commands
+
+    friendly = state.friendly_units.values()[0]
+    enemy = state.enemy_units.values()[0]
+
+
+    # 0 = do nothing
+    # 1-8 = move 5 units in dir
+    # 9-13 = attack unit num 0-4
+    a = action
+    if a < 0 or 9 < a:
+      raise Exception("Invalid action: " + str(a))
+
+    if a == 0: return commands # 0 means keep doing what you were doing before.
+    # Consider simplifying this to just run away from the enemy... So we only have 2 actions.
+    elif 1 <= a and a <= 8:
+      del_x, del_y = MOVES[a-1]
+      move_x = Bot.constrain(friendly.x + del_x, X_MOVE_RANGE)
+      move_y = Bot.constrain(friendly.y + del_y, Y_MOVE_RANGE)
+      commands.append([friendly.id, tc_client.UNIT_CMD.Move, -1, move_x, move_y])
+    elif a == 9:
+      commands.append([friendly.id, tc_client.UNIT_CMD.Attack_Unit, enemy.id])
+    else:
+      raise Exception("Failed to grok action: " + str(a))
+
     return commands
 
 
@@ -436,9 +428,11 @@ class Bot:
     if f0.id != f1.id or e0.id != e1.id:
       raise Exception("Units in adjoind frames must have the same IDs, we assume one unit.")
 
+    print "f1 = " + str(f1)
+    print "e1 = " + str(e1)
+
     return [Bot.unit_to_vector(f0, True) + Bot.unit_to_vector(f1, True) +
             Bot.unit_to_vector(e0, False) + Bot.unit_to_vector(e1, False)]
-    # return [list(itertools.chain.from_iterable(friendly_tensor + enemy_tensor))]
 
 
   @staticmethod
@@ -451,7 +445,6 @@ class Bot:
             float(unit.groundCD) / unit.maxCD
             ]
 
-    print "unit = " + str(unit)
     if is_friendly:
       # Then we add the Order we're currently giving it. Simulate that we can't see the order for enemies.
 
@@ -469,9 +462,6 @@ class Bot:
 
     return unit_vector
 
-  @staticmethod
-  def pack_unit_tensor(unit_tensor, tensor_shape, final_rows):
-    return unit_tensor + [[0 for i in range(0, tensor_shape)] for i in range(len(unit_tensor), final_rows)]
 
   @staticmethod
   def norm(x, min_max):
@@ -479,6 +469,7 @@ class Bot:
     # return (2.0*(x - min_max[0]) / (min_max[1] - min_max[0])) - 1
     # Map to range [0,1.0]
     return (float(x) - min_max[0]) / (min_max[1] - min_max[0])
+
 
   @staticmethod
   def constrain(x, min_max):
