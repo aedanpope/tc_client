@@ -16,7 +16,8 @@ import sys
 import math
 
 
-MOVES = [(6,0), (-6,0), (0,6), (0,-6), (4,4), (4,-4), (-4,4), (-4,-4)]
+# MOVES = [(6,0), (-6,0), (0,6), (0,-6), (4,4), (4,-4), (-4,4), (-4,-4)]
+MOVES = [(6,0), (-6,0), (0,6), (0,-6)]
 # MOVES = [(10,0), (-10,0), (0,10), (0,-10), (7,7), (7,-7), (-7,7), (-7,-7)]
 # friendly starts at (70,140), enemy starts at (100,140)
 X_MOVE_RANGE = (60,120) # X_MOVE_RANGE and Y_MOVE_RANGE should be the same magnitude.
@@ -30,7 +31,7 @@ MAX_FRIENDLY_UNITS = 1 # 5 for marines
 MAX_ENEMY_UNITS = 1 # 5 for marines
 INP_SHAPE = MAX_FRIENDLY_UNITS * FRIENDLY_TENSOR_SIZE + MAX_ENEMY_UNITS * ENEMY_TENSOR_SIZE
 HID_SHAPE = 20 # Hidden layer shape.
-OUT_SHAPE = 9 + MAX_ENEMY_UNITS
+OUT_SHAPE = 5 + MAX_ENEMY_UNITS
 V = False  # Verbose
 LEARNING_RATE = 0.01
 
@@ -350,18 +351,26 @@ class Bot:
     #   # Advantage is a percentage of total life difference. 1.0 in a single round = won the game.
     #   rewards[i-1] = 0.1 * Bot.calculate_advantage(battle[i-1], battle[i])
 
-    # Now give gradually discounted rewards to earlier actions.
+    # Final reward = 1 for winning, -0.5 to 0.5 for doing some damage.
+    # if battle.is_won:
+    #   rewards[-1] = 1
+    # else:
+    #   rewards[-1] += 0.5 + Bot.calculate_advantage(battle[0], battle[-1])
+    # PARTIAL REWARDS teach it not to take risks, so make the game easier and give complete rewards.
     if battle.is_won:
       rewards[-1] += 1
     else:
       rewards[-1] += -1
 
-    for i in reversed(xrange(0, rewards.size-1)):
-      self.total_reward += rewards[i+1]
-      if rewards[i+1] > 0:
-        self.total_reward_p += rewards[i+1]
+    for i in range(0, battle.size()):
+      self.total_reward += rewards[i]
+      if rewards[i] > 0:
+        self.total_reward_p += rewards[i]
       else:
-        self.total_reward_n += rewards[i+1]
+        self.total_reward_n += rewards[i]
+
+    # Now give gradually discounted rewards to earlier actions.
+    for i in reversed(xrange(0, rewards.size-1)):
       rewards[i] = rewards[i] * GAMMA + rewards[i+1]
 
     rewards = rewards[:-1] # We drop the input/action/reward for the end state.
@@ -408,17 +417,17 @@ class Bot:
     # 1-8 = move 5 units in dir
     # 9-13 = attack unit num 0-4
     a = action
-    if a < 0 or 9 < a:
+    if a < 0 or len(MOVES)+1 < a:
       raise Exception("Invalid action: " + str(a))
 
     if a == 0: return commands # 0 means keep doing what you were doing before.
     # Consider simplifying this to just run away from the enemy... So we only have 2 actions.
-    elif 1 <= a and a <= 8:
+    elif 1 <= a and a <= len(MOVES):
       del_x, del_y = MOVES[a-1]
       move_x = Bot.constrain(friendly.x + del_x, X_MOVE_RANGE)
       move_y = Bot.constrain(friendly.y + del_y, Y_MOVE_RANGE)
       commands.append([friendly.id, tc_client.UNIT_CMD.Move, -1, move_x, move_y])
-    elif a == 9:
+    elif a == len(MOVES)+1:
       commands.append([friendly.id, tc_client.UNIT_CMD.Attack_Unit, enemy.id])
     else:
       raise Exception("Failed to grok action: " + str(a))
