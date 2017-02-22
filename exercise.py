@@ -5,12 +5,22 @@ import tf_bot
 import bot_q_learner_simple_a
 import policy_bot
 import advantage_bot
+import dnq_bot
 from focus_fire_bot import FocusFireBot
 
 V = False
 
 
 if __name__ == '__main__':
+
+
+  # bot = FocusFireBot()
+  # bot = tf_bot.Bot()
+  # bot = advantage_bot.Bot()
+  bot = dnq_bot.Bot()
+  # bot = policy_bot.Bot()
+  # bot = bot_q_learner_simple_a.Bot()
+
 
   port = 11111
   hostname = "127.0.0.1"
@@ -52,12 +62,6 @@ if __name__ == '__main__':
 
   x = 0
   focus_uid = -1
-
-  # bot = FocusFireBot()
-  # bot = tf_bot.Bot()
-  # bot = advantage_bot.Bot()
-  bot = policy_bot.Bot()
-  # bot = bot_q_learner_simple_a.Bot()
 
   update = tc.receive() # Get the first state so we can see our starting units.
   tc.send([])
