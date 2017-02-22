@@ -71,7 +71,7 @@ END_E = 0.1 #Final chance of random action
 ANNEALING_STEPS = 10000 #How many steps of training to reduce startE to endE.
 E_STEP = (START_E - END_E)/ANNEALING_STEPS
 PRE_TRAIN_STEPS = 10000 #How many steps of random actions before training begins.
-TAU = 0.001 #Rate to update target network toward primary network
+TAU = 0.001 # Rate to update target network toward primary network
 
 
 # How much we multiply the current explore value by each cycle.
@@ -474,22 +474,38 @@ class Bot:
 
 
     if self.total_steps > PRE_TRAIN_STEPS and self.total_steps % (UPDATE_FREQ) == 0:
-      train_batch = self.experience_buffer.sample(BATCH_SIZE)
-      # Train the Main and Target networks.
-      ### # self.train_battle(self.current_battle)
-      Q1 = sess.run(mainQN.predict,feed_dict={mainQN.scalarInput:np.vstack(trainBatch[:,3])})
-      Q2 = sess.run(targetQN.Qout,feed_dict={targetQN.scalarInput:np.vstack(trainBatch[:,3])})
-      end_multiplier = -(trainBatch[:,4] - 1)
-      doubleQ = Q2[range(batch_size),Q1]
-      targetQ = trainBatch[:,2] + (y*doubleQ * end_multiplier)
-      #Update the network with our target values.
-      _ = sess.run(mainQN.updateModel, \
-          feed_dict={mainQN.scalarInput:np.vstack(trainBatch[:,0]),mainQN.targetQ:targetQ, mainQN.actions:trainBatch[:,1]})
-
-      updateTarget(targetOps,sess) #Set the target network to be equal to the primary network.
-
+      self.train()
     # Outputs
     return commands
+
+  def train(self):
+    # Train the Main and Target networks.
+    train_batch = self.experience_buffer.sample(BATCH_SIZE)
+    # Get actions from Main, but Q-values for those actions from Target
+    actions_out = sess.run(main_network.predict,feed_dict={main_network.scalarInput:np.vstack(train_batch[:,3])})
+    Q2 = sess.run(target_network.Qout,feed_dict={target_network.scalarInput:np.vstack(train_batch[:,3])})
+    end_multiplier = -(train_batch.dones() - 1)
+    doubleQ = Q2[range(BATCH_SIZE),actions_out]
+    targetQ = train_batch .rewards() + (y*doubleQ * end_multiplier)
+    # Train the network with our target values.
+    sess.run(main_network.updateModel,
+        feed_dict={main_network.scalarInput:np.vstack(train_batch.states()),
+                   main_network.targetQ:targetQ,
+                   main_network.actions:train_batch.actions()})
+    # def states(self):
+    #   return np.array(self.buffer)[:,0]
+    # def actions(self):
+    #   return np.array(self.buffer)[:,1]
+    # def rewards(self):
+    #   return np.array(self.buffer)[:,2]
+    # def new_states(self):
+    #   return np.array(self.buffer)[:,3]
+    # def dones(self):
+    #   return np.array(self.buffer)[:,4]
+
+    # Set the target network to be equal to the primary network, with factor TAU = 0.001
+    self.target_network.update_from_main_graph(self.main_network)
+
 
   def add_battle_to_buffer(self, battle, buffer):
     print "\nTRAIN BATTLE"
