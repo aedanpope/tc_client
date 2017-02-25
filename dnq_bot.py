@@ -65,7 +65,7 @@ LEARNING_RATE = 0.001
 BUFFER_SIZE = 50000
 BATCH_SIZE = 32 #How many experiences to use for each training step.
 UPDATE_FREQ = 4 #How often to perform a training step.
-Y = .99 #Discount factor on the target Q-values
+FUTURE_Q_DISCOUNT = .99 #Discount factor on future Q-values, discount on expected future reward.
 START_E = 1 #Starting chance of random action
 END_E = 0.1 #Final chance of random action
 ANNEALING_STEPS = 10000 #How many steps of training to reduce startE to endE.
@@ -207,7 +207,7 @@ class ExperienceBuffer():
     return np.array(self.buffer)[:,1]
   def rewards(self):
     return np.array(self.buffer)[:,2]
-  def new_states(self):
+  def states2(self):
     return np.array(self.buffer)[:,3]
   def dones(self):
     return np.array(self.buffer)[:,4]
@@ -482,11 +482,18 @@ class Bot:
     # Train the Main and Target networks.
     train_batch = self.experience_buffer.sample(BATCH_SIZE)
     # Get actions from Main, but Q-values for those actions from Target
-    actions_out = sess.run(main_network.predict,feed_dict={main_network.scalarInput:np.vstack(train_batch[:,3])})
-    Q2 = sess.run(target_network.Qout,feed_dict={target_network.scalarInput:np.vstack(train_batch[:,3])})
-    end_multiplier = -(train_batch.dones() - 1)
-    doubleQ = Q2[range(BATCH_SIZE),actions_out]
-    targetQ = train_batch .rewards() + (y*doubleQ * end_multiplier)
+# https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-0-q-learning-with-tables-and-neural-networks-d195264329d0#.odnj51rop
+    # Q[s,a] = Q[s,a] + lr*(r + FUTURE_Q_DISCOUNT*np.max(Q[s1,:]) - Q[s,a])
+    # Q-Target = r + FUTURE_Q_DISCOUNT*Q(s’,argmax(Q(s',a,\theta),'\theta')
+
+    actions_out = sess.run(main_network.predict,feed_dict={main_network.scalarInput:np.vstack(train_batch.states2())})
+    q2_out = sess.run(target_network.Qout,feed_dict={target_network.scalarInput:np.vstack(train_batch.states2())})
+
+    end_multiplier = 1 - train_batch.dones() # Set the predicted future reward to 0 if it's the end state.
+    doubleQ = q_out[range(BATCH_SIZE),actions_out]
+    targetQ = train_batch.rewards() + (FUTURE_Q_DISCOUNT*doubleQ * end_multiplier)
+
+
     # Train the network with our target values.
     sess.run(main_network.updateModel,
         feed_dict={main_network.scalarInput:np.vstack(train_batch.states()),
@@ -498,7 +505,7 @@ class Bot:
     #   return np.array(self.buffer)[:,1]
     # def rewards(self):
     #   return np.array(self.buffer)[:,2]
-    # def new_states(self):
+    # def states2(self):
     #   return np.array(self.buffer)[:,3]
     # def dones(self):
     #   return np.array(self.buffer)[:,4]
