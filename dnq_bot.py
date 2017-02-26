@@ -24,6 +24,7 @@
 
 
 import tc_client
+from map import Map
 import argparse
 import time
 import numpy as np
@@ -59,7 +60,7 @@ OUT_SHAPE = 5 + MAX_ENEMY_UNITS
 # Learning and env params:
 
 # LEARNING_RATE = 0.01
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.01
 BUFFER_SIZE = 50000
 BATCH_SIZE = 32 #How many experiences to use for each training step.
 UPDATE_FREQ = 4 #How often to perform a training step.
@@ -70,7 +71,7 @@ END_E = 0.05 #0.1 #Final chance of random action
 # For harder learning, increase these params:
 
 ANNEALING_STEPS = 10000 # 10000#How many steps of training to reduce startE to endE.
-PRE_TRAIN_STEPS = 1000 # 10000#How many steps of random actions before training begins.
+PRE_TRAIN_STEPS = 100 # 10000#How many steps of random actions before training begins.
 # Needs to be more than BATCH_SIZE
 
 TAU = 0.001 # Rate to update target network toward primary network
@@ -91,10 +92,15 @@ MICRO_REWARD = 0.01
 
 # TF Session
 SESS = None
+SETTINGS = Map({})
+STEP = 0
+TF_WRITER = None
 
 ## Generally, try and keep everything in the [-1,1] range.
 ## TODO: consider trying [0,1] range for some stuff e.g. HP.
 
+def verbose(v=10):
+  return V_PER_FRAME or SETTINGS.speed >= v
 
 
 class Battle:
@@ -230,6 +236,7 @@ class ExperienceBuffer():
     losses = random.sample(self.lose_buffer , min(size/2, len(self.lose_buffer)))
     result = ExperienceBuffer()
     result.buffer = wins + losses
+    random.shuffle(result.buffer)
     return result
 
 def vsstr(vars):
@@ -261,6 +268,8 @@ class DNQNetwork:
   trainable_variables = None
   update_from_main_ops = None
 
+  summaries = None
+
   def __init__(self, myname):
     existing_tvars = tf.trainable_variables()
 
@@ -291,9 +300,15 @@ class DNQNetwork:
     # Get the Q values from the network for the specified actions in action_holder.
     relevant_q = tf.reduce_sum(tf.mul(self.q_out, self.actions_onehot), reduction_indices=1)
 
-    loss = tf.reduce_mean(tf.square(self.target_q_holder - relevant_q), name=("loss_" + myname))
-    trainer = tf.train.AdamOptimizer(learning_rate=0.0001, name=("trainer_" + myname))
+    td_error = tf.square(self.target_q_holder - relevant_q)
+    tf.summary.histogram('td_error', td_error)
+    loss = tf.reduce_mean(td_error, name=("loss_" + myname))
+    tf.summary.scalar('loss', loss)
+    trainer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE, name=("trainer_" + myname))
     self.update_model = trainer.minimize(loss)
+
+
+    self.summaries = tf.summary.merge_all()
 
     # Get trainable vars so we can update Target network from Main network.
     self.trainable_variables = []
@@ -335,20 +350,27 @@ class DNQNetwork:
     # end_multiplier sets Q(s1, a1) = 0 when there's no future (and then reward is not 0)
     target_q = train_batch.rewards() + (FUTURE_Q_DISCOUNT * q_2_for_actions * end_multiplier)
 
-    # print ""
-    # print "TRAIN BATCH"
-    # print "states_2 = " + str(train_batch.states2())
-    # print "actions_2 = " + str(actions_2)
-    # print "q_2 = " + str(q_2)
-    # print "end_multiplier = " + str(end_multiplier)
-    # print "q_2_for_actions = " + str(q_2_for_actions)
-    # print "target_q = " + str(target_q)
+    if verbose():
+      print ""
+      print "TRAIN BATCH"
+      if verbose(30): print "states_2 = " + str(train_batch.states2())
+      print "actions_2 = " + str(actions_2)
+      if verbose(30):print "q_2 = " + str(q_2)
+      print "rewards = " + str(train_batch.rewards())
+      print "end_multiplier = " + str(end_multiplier)
+      print "q_2_for_actions = " + str(q_2_for_actions)
+      print "target_q = " + str(target_q)
 
     # Train the network with Q values from bellman equation, i.e. Assign RHS to LHS
-    SESS.run(main_network.update_model,
+    summary, _ = SESS.run([main_network.summaries, main_network.update_model],
         feed_dict={main_network.state_in:np.vstack(train_batch.states()),
                    main_network.target_q_holder:target_q,
                    main_network.action_holder:train_batch.actions()})
+
+    global STEP
+    STEP += 1
+    # if (STEP % 10 == 0):
+    TF_WRITER.add_summary(summary, STEP)
 
   def update_from_main_graph(self, main_graph):
     # ASSUME that .trainable_vars as in-step
@@ -393,11 +415,11 @@ class Bot:
   trained = False
 
   def __init__(self):
-    global SESS
+    global SESS, TF_WRITER
     SESS = tf.InteractiveSession()
     self.main_network = DNQNetwork('main')
     self.target_network = DNQNetwork('target')
-    tf.summary.FileWriter('out/graph', SESS.graph)
+    TF_WRITER = tf.summary.FileWriter('out/graph', SESS.graph)
     SESS.run(tf.global_variables_initializer())
     # Init the target network to be equal to the primary network.
     self.target_network.update_from_main_graph(self.main_network)
@@ -433,11 +455,10 @@ class Bot:
         self.battles.append(self.current_battle)
     self.current_battle.add_stage(stage)
 
-  @staticmethod
-  def verbose(settings):
-    return V_PER_FRAME or settings.speed >= 10
 
   def get_commands(self, game_state, settings):
+    global SETTINGS
+    SETTINGS = settings
     commands = []
 
     # Skip every second frame.
@@ -455,26 +476,26 @@ class Bot:
       self.total_steps += 1
 
       # Figure out what action to take next.
-      if Bot.verbose(settings): print "inp = " + str(stage.inp)
+      if verbose(): print "inp = " + str(stage.inp)
 
 
       # Take action based on a probability returned from the policy network.
       agent_out = self.main_network.get_q_out([stage.inp])[0]
       action = np.argmax(agent_out)
-      if Bot.verbose(settings): print "agent_out = " + str(agent_out)
+      if verbose(): print "agent_out = " + str(agent_out)
       # if V_PER_FRAME: print "tmp = " + str(tmp)
-      if Bot.verbose(settings): print "action = " + str(action)
+      if verbose(): print "action = " + str(action)
 
       # TODO implement exploration algorithm here.
       # For now E-Greedy
       if self.total_steps < PRE_TRAIN_STEPS or np.random.rand(1) < self.explore:
-        if Bot.verbose(settings): print "Explore!"
+        if verbose(): print "Explore!"
         action = np.random.randint(0, OUT_SHAPE)
       else:
-        if Bot.verbose(settings): print "Dont Explore."
+        if verbose(): print "Dont Explore."
       if PRE_TRAIN_STEPS < self.total_steps and self.explore > END_E:
         self.explore -= E_STEP
-      if Bot.verbose(settings): print "action2 = " + str(action)
+      if verbose(): print "action2 = " + str(action)
 
       # Boltzmann etc. TODO
       # tmp = np.random.choice(agent_out,p=agent_out) # pick i based on probabilities
