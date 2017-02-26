@@ -51,43 +51,37 @@ FRIENDLY_TENSOR_SIZE = 14
 ENEMY_TENSOR_SIZE = 8
 MAX_FRIENDLY_UNITS = 1 # 5 for marines
 MAX_ENEMY_UNITS = 1 # 5 for marines
+EXTRA = 1
 
 # TOPOLOGY
-INP_SHAPE = MAX_FRIENDLY_UNITS * FRIENDLY_TENSOR_SIZE + MAX_ENEMY_UNITS * ENEMY_TENSOR_SIZE
-HID_SHAPE = 20 # Hidden layer shape.
+INP_SHAPE = EXTRA + MAX_FRIENDLY_UNITS * FRIENDLY_TENSOR_SIZE + MAX_ENEMY_UNITS * ENEMY_TENSOR_SIZE
+# HID_SHAPE = 20 # Hidden layer shape.
+HID_1_SHAPE = 50
+HID_2_SHAPE = 30
 OUT_SHAPE = 5 + MAX_ENEMY_UNITS
 
 # Learning and env params:
 
-# LEARNING_RATE = 0.01
 LEARNING_RATE = 0.01
+TAU = 0.001 # Rate to update target network toward primary network
 BUFFER_SIZE = 50000
-BATCH_SIZE = 32 #How many experiences to use for each training step.
-UPDATE_FREQ = 4 #How often to perform a training step.
+BATCH_SIZE = 100 # 32 #How many experiences to use for each training step.
+UPDATE_FREQ = 4 # 4 #How often to perform a training step.
 FUTURE_Q_DISCOUNT = .99 #Discount factor on future Q-values, discount on expected future reward.
-START_E = 1 #Starting chance of random action
+START_E = 0.8 #Starting chance of random action
 END_E = 0.05 #0.1 #Final chance of random action
 
 # For harder learning, increase these params:
 
-ANNEALING_STEPS = 10000 # 10000#How many steps of training to reduce startE to endE.
-PRE_TRAIN_STEPS = 100 # 10000#How many steps of random actions before training begins.
+
 # Needs to be more than BATCH_SIZE
+# Require a lot so we have at least a few wins once we start learning.
+PRE_TRAIN_STEPS = 10000 # 10000#How many steps of random actions before training begins.
 
-TAU = 0.001 # Rate to update target network toward primary network
-
+ANNEALING_STEPS = 50000 # 10000#How many steps of training to reduce startE to endE.
 E_STEP = (START_E - END_E)/ANNEALING_STEPS
 
 
-# Dicount-rate: how much we depreciate future rewards in value for each state step.
-GAMMA = 0.99
-# GAMMA = 0.9
-# Initial weights on neuron connections, need to start small so max output of NN isn't >> reward.
-W_INIT = 0.01
-# Reward val
-REWARD = 1
-MINI_REWARD = 0.1
-MICRO_REWARD = 0.01
 
 
 # TF Session
@@ -279,12 +273,15 @@ class DNQNetwork:
     # These lines established the feed-forward part of the network. The agent takes a state and produces an action.
     # self.state_in= tf.placeholder(shape=[INP_SHAPE],dtype=tf.float32, name=("state_in_" + myname))
     self.state_in= tf.placeholder(shape=[None,INP_SHAPE],dtype=tf.float32, name=("state_in_" + myname))
-    hidden = slim.fully_connected(self.state_in,HID_SHAPE,
-                                  biases_initializer=None,activation_fn=tf.nn.relu, scope=("hidden_" + myname))
+    hid_1 = slim.fully_connected(self.state_in,HID_1_SHAPE,
+                                  biases_initializer=None,activation_fn=tf.nn.relu, scope=("hidden1_" + myname))
+    hid_2 = slim.fully_connected(hid_1,HID_2_SHAPE,
+                                  biases_initializer=None,activation_fn=tf.nn.relu, scope=("hidden2_" + myname))
     # TODO: split into separate advantage & action streams.
 
-    self.q_out = slim.fully_connected(hidden,OUT_SHAPE,
-                                      activation_fn=tf.nn.softmax,biases_initializer=None,
+    self.q_out = slim.fully_connected(hid_2,OUT_SHAPE,
+                                      activation_fn=tf.nn.tanh,biases_initializer=None,
+                                      # activation_fn=tf.nn.softmax,biases_initializer=None,
                                       scope=("q_out_" + myname))
     self.action_out = tf.argmax(self.q_out,1, name=("action_out_" + myname))
 
@@ -295,15 +292,29 @@ class DNQNetwork:
     #Below we obtain the loss by taking the sum of squares difference between the target and prediction Q values.
     self.target_q_holder = tf.placeholder(shape=[None],dtype=tf.float32, name=("target_q_holder_" + myname))
     self.action_holder = tf.placeholder(shape=[None],dtype=tf.int32, name=("action_holder_" + myname))
-    self.actions_onehot = tf.one_hot(self.action_holder,OUT_SHAPE,dtype=tf.float32, name=("actions_onehot_" + myname))
+    actions_onehot = tf.one_hot(self.action_holder,OUT_SHAPE,dtype=tf.float32, name=("actions_onehot_" + myname))
 
     # Get the Q values from the network for the specified actions in action_holder.
-    relevant_q = tf.reduce_sum(tf.mul(self.q_out, self.actions_onehot), reduction_indices=1)
+    relevant_q = tf.reduce_sum(tf.mul(self.q_out, actions_onehot), reduction_indices=1)
 
     td_error = tf.square(self.target_q_holder - relevant_q)
     tf.summary.histogram('td_error', td_error)
     loss = tf.reduce_mean(td_error, name=("loss_" + myname))
     tf.summary.scalar('loss', loss)
+
+    ### FUKK Just learns -Nans or all actions are equally crap.
+
+
+    # indexes = tf.range(0, tf.shape(self.q_out)[0]) * tf.shape(self.q_out)[1] + self.action_holder
+    # responsible_outputs = tf.gather(tf.reshape(self.q_out, [-1]), indexes)
+    # loss = -tf.reduce_mean(tf.log(responsible_outputs)*self.target_q_holder)
+    # tf.summary.scalar('loss', loss)
+
+    # td_error = tf.log(self.target_q_holder - relevant_q)
+    # # tf.summary.histogram('td_error', td_error)
+    # loss = -tf.reduce_mean(td_error, name=("loss_" + myname))
+    # tf.summary.scalar('loss', loss)
+
     trainer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE, name=("trainer_" + myname))
     self.update_model = trainer.minimize(loss)
 
@@ -354,11 +365,13 @@ class DNQNetwork:
       print ""
       print "TRAIN BATCH"
       if verbose(30): print "states_2 = " + str(train_batch.states2())
-      print "actions_2 = " + str(actions_2)
       if verbose(30):print "q_2 = " + str(q_2)
-      print "rewards = " + str(train_batch.rewards())
-      print "end_multiplier = " + str(end_multiplier)
+      if verbose(30): print "states = " + str(train_batch.states())
       print "q_2_for_actions = " + str(q_2_for_actions)
+      print "end_multiplier = " + str(end_multiplier)
+      print "actions = " + str(train_batch.actions())
+      print "rewards = " + str(train_batch.rewards())
+      print "actions_2 = " + str(actions_2)
       print "target_q = " + str(target_q)
 
     # Train the network with Q values from bellman equation, i.e. Assign RHS to LHS
@@ -578,9 +591,7 @@ class Bot:
     else:
       self.total_reward_n += reward
 
-    # Now give gradually discounted rewards to earlier actions.
-    # for i in reversed(xrange(0, rewards.size-1)):
-    #   rewards[i] = rewards[i] * GAMMA + rewards[i+1]
+    # NOTE: We discount future rewards at training time, instead of here.
 
     for i in range(0, battle.size()-1):
       # def append(self, state, action, reward, new_state, done):
@@ -655,7 +666,8 @@ class Bot:
     if V_PER_FRAME: print "f1 = " + str(f1)
     if V_PER_FRAME: print "e1 = " + str(e1)
 
-    return (Bot.unit_to_vector(f0, True) + Bot.unit_to_vector(f1, True) +
+    return ([Bot.norm(battle.size(), ([0,100]))] +
+            Bot.unit_to_vector(f0, True) + Bot.unit_to_vector(f1, True) +
             Bot.unit_to_vector(e0, False) + Bot.unit_to_vector(e1, False))
 
 
