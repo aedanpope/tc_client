@@ -68,7 +68,7 @@ BUFFER_SIZE = 50000
 BATCH_SIZE = 100 # 32 #How many experiences to use for each training step.
 UPDATE_FREQ = 4 # 4 #How often to perform a training step.
 FUTURE_Q_DISCOUNT = .99 #Discount factor on future Q-values, discount on expected future reward.
-START_E = 0.8 #Starting chance of random action
+START_E = 1 #Starting chance of random action
 END_E = 0.05 #0.1 #Final chance of random action
 
 # For harder learning, increase these params:
@@ -78,7 +78,7 @@ END_E = 0.05 #0.1 #Final chance of random action
 # Require a lot so we have at least a few wins once we start learning.
 PRE_TRAIN_STEPS = 10000 # 10000#How many steps of random actions before training begins.
 
-ANNEALING_STEPS = 50000 # 10000#How many steps of training to reduce startE to endE.
+ANNEALING_STEPS = 100000 # 10000#How many steps of training to reduce startE to endE.
 E_STEP = (START_E - END_E)/ANNEALING_STEPS
 
 
@@ -666,7 +666,7 @@ class Bot:
     if V_PER_FRAME: print "f1 = " + str(f1)
     if V_PER_FRAME: print "e1 = " + str(e1)
 
-    return ([Bot.norm(battle.size(), ([0,100]))] +
+    return ([Bot.norm(battle.size(), ([0,64]))] +
             Bot.unit_to_vector(f0, True) + Bot.unit_to_vector(f1, True) +
             Bot.unit_to_vector(e0, False) + Bot.unit_to_vector(e1, False))
 
