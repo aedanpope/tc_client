@@ -30,8 +30,8 @@ if __name__ == '__main__':
   # tc.initial_map = 'Maps/BroodWar/micro/m5v5_c_far.scm'
   # # tc.initial_map = 'Maps/BroodWar/micro/Marine1vZergling1_c_far.scm'
   # tc.initial_map = 'Maps/BroodWar/micro/Marine1vZergling1_20s.scm'
-  tc.initial_map = 'Maps/BroodWar/micro/kite.scm'
-  # tc.initial_map = 'Maps/BroodWar/micro/kite_2hit.scm'
+  # tc.initial_map = 'Maps/BroodWar/micro/kite.scm'
+  tc.initial_map = 'Maps/BroodWar/micro/kite_2hit.scm'
   # tc.initial_map = 'Maps/BroodWar/micro/Vulture_v_Zealot.scm'
   tc.window_pos = [100, 100]
   tc.window_size = [640, 480]

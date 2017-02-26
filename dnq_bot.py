@@ -68,14 +68,18 @@ UPDATE_FREQ = 4 #How often to perform a training step.
 FUTURE_Q_DISCOUNT = .99 #Discount factor on future Q-values, discount on expected future reward.
 START_E = 1 #Starting chance of random action
 END_E = 0.1 #Final chance of random action
-ANNEALING_STEPS = 10000 #How many steps of training to reduce startE to endE.
-E_STEP = (START_E - END_E)/ANNEALING_STEPS
-PRE_TRAIN_STEPS = 10000 #How many steps of random actions before training begins.
+
+# For harder learning, increase these params:
+
+ANNEALING_STEPS = 10000 # 10000#How many steps of training to reduce startE to endE.
+PRE_TRAIN_STEPS = 1000 # 10000#How many steps of random actions before training begins.
+# Needs to be more than BATCH_SIZE
+
 TAU = 0.001 # Rate to update target network toward primary network
 
+E_STEP = (START_E - END_E)/ANNEALING_STEPS
 
-# How much we multiply the current explore value by each cycle.
-EXPLORE_FACTOR = 0.9995
+
 # Dicount-rate: how much we depreciate future rewards in value for each state step.
 GAMMA = 0.99
 # GAMMA = 0.9
@@ -88,7 +92,7 @@ MICRO_REWARD = 0.01
 
 
 # TF Session
-sess = None
+SESS = None
 
 ## Generally, try and keep everything in the [-1,1] range.
 ## TODO: consider trying [0,1] range for some stuff e.g. HP.
@@ -190,6 +194,8 @@ class ExperienceBuffer():
 
   def append(self, state, action, reward, new_state, done):
     vec = [state, action, reward, new_state, done]
+    if None in vec:
+      raise Exception("Can't have a none in experience " + str(vec))
     self.buffer.append(vec)
     if len(self.buffer) >= BUFFER_SIZE:
       # MAybe slow, consider using a boolean mask to change in-place
@@ -208,7 +214,7 @@ class ExperienceBuffer():
   def rewards(self):
     return np.array(self.buffer)[:,2]
   def states2(self):
-    return np.array(self.buffer)[:,3]
+    return np.array(np.array(self.buffer)[:,3])
   def dones(self):
     return np.array(self.buffer)[:,4]
 
@@ -254,30 +260,31 @@ class DNQNetwork:
     # https://github.com/awjuliani/DeepRL-Agents/blob/master/Vanilla-Policy.ipynb
 
     # These lines established the feed-forward part of the network. The agent takes a state and produces an action.
-    self.state_in= tf.placeholder(shape=[None,INP_SHAPE],dtype=tf.float32)
-    hidden = slim.fully_connected(self.state_in,HID_SHAPE,biases_initializer=None,activation_fn=tf.nn.relu)
+    # self.state_in= tf.placeholder(shape=[INP_SHAPE],dtype=tf.float32, name=("state_in_" + myname))
+    self.state_in= tf.placeholder(shape=[None,INP_SHAPE],dtype=tf.float32, name=("state_in_" + myname))
+    hidden = slim.fully_connected(self.state_in,HID_SHAPE,
+                                  biases_initializer=None,activation_fn=tf.nn.relu, scope=("hidden_" + myname))
     # TODO: split into separate advantage & action streams.
 
-    self.q_out = slim.fully_connected(hidden,OUT_SHAPE,activation_fn=tf.nn.softmax,biases_initializer=None)
-    self.action_out = tf.argmax(self.q_out,1)
-
-    self.reward_holder = tf.placeholder(shape=[None],dtype=tf.float32)
-    self.action_holder = tf.placeholder(shape=[None],dtype=tf.int32)
+    self.q_out = slim.fully_connected(hidden,OUT_SHAPE,
+                                      activation_fn=tf.nn.softmax,biases_initializer=None,
+                                      scope=("q_out_" + myname))
+    self.action_out = tf.argmax(self.q_out,1, name=("action_out_" + myname))
 
     # TODO: Take the log of the output values, to allow Positive and Negative rewards/advantages.
     # Taking a Log I think will stop divergence.
     # https://medium.com/@awjuliani/super-simple-reinforcement-learning-tutorial-part-1-fd544fab149#.kbxmx7lfm
 
     #Below we obtain the loss by taking the sum of squares difference between the target and prediction Q values.
-    self.target_q_holder = tf.placeholder(shape=[None],dtype=tf.float32)
-    self.action_holder = tf.placeholder(shape=[None],dtype=tf.int32)
-    self.actions_onehot = tf.one_hot(self.action_holder,OUT_SHAPE,dtype=tf.float32)
+    self.target_q_holder = tf.placeholder(shape=[None],dtype=tf.float32, name=("target_q_holder_" + myname))
+    self.action_holder = tf.placeholder(shape=[None],dtype=tf.int32, name=("action_holder_" + myname))
+    self.actions_onehot = tf.one_hot(self.action_holder,OUT_SHAPE,dtype=tf.float32, name=("actions_onehot_" + myname))
 
+    # Get the Q values from the network for the specified actions in action_holder.
     relevant_q = tf.reduce_sum(tf.mul(self.q_out, self.actions_onehot), reduction_indices=1)
 
-    td_error = tf.square(self.target_q_holder - relevant_q)
-    loss = tf.reduce_mean(td_error)
-    trainer = tf.train.AdamOptimizer(learning_rate=0.0001)
+    loss = tf.reduce_mean(tf.square(self.target_q_holder - relevant_q), name=("loss_" + myname))
+    trainer = tf.train.AdamOptimizer(learning_rate=0.0001, name=("trainer_" + myname))
     self.update_model = trainer.minimize(loss)
 
     # Get trainable vars so we can update Target network from Main network.
@@ -296,31 +303,31 @@ class DNQNetwork:
   # tmp = np.random.choice(agent_out,p=agent_out) # pick i based on probabilities
   # action = np.argmax(tmp == tmp)
   def get_q_out(self, states):
-    return self.sess.run(self.q_out,feed_dict={self.state_in:states})
+    return SESS.run(self.q_out,feed_dict={self.state_in:states})
 
   def get_actions(self, states):
-    return self.sess.run(self.action_out,feed_dict={self.state_in:states})
+    return SESS.run(self.action_out,feed_dict={self.state_in:states})
 
   @staticmethod
   def train_batch(main_network, target_network, train_batch):
     # Get actions from Main, but Q-values for those actions from Target
     # https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-0-q-learning-with-tables-and-neural-networks-d195264329d0#.odnj51rop
     # Q[s,a] = Q[s,a] + lr*(r + FUTURE_Q_DISCOUNT*np.max(Q[s1,:]) - Q[s,a])
-    # Q-Target = r + FUTURE_Q_DISCOUNT*Q(s’,argmax(Q(s',a,\theta),'\theta')
+    # Q-Target = r + FUTURE_Q_DISCOUNT*Q(s',argmax(Q(s',a,\theta),'\theta')
 
     # Get stuff for Bellman, i.e. what is the Q-value for the best move in the subsequent state?
-    actions_2 = sess.run(main_network.action_out,feed_dict={main_network.state_in:np.vstack(train_batch.states2())})
-    q_2 = sess.run(target_network.q_out,feed_dict={target_network.state_in:np.vstack(train_batch.states2())})
+    actions_2 = SESS.run(main_network.action_out,feed_dict={main_network.state_in:np.vstack(train_batch.states2())})
+    q_2 = SESS.run(target_network.q_out,feed_dict={target_network.state_in:np.vstack(train_batch.states2())})
 
     end_multiplier = 1 - train_batch.dones() # Set the predicted future reward to 0 if it's the end state.
     # Chose the Q value from target_network for each action taken by main_network
-    q_2_for_actions = q_out[range(BATCH_SIZE),actions_out]
+    q_2_for_actions = q_2[range(BATCH_SIZE),actions_2]
 
     # RHS of Bellman equation: Q(s, a) = r + gamma * max(Q(s1, a1))
     target_q = train_batch.rewards() + (FUTURE_Q_DISCOUNT * q_2_for_actions * end_multiplier)
 
     # Train the network with Q values from bellman equation, i.e. Assign RHS to LHS
-    sess.run(main_network.updateModel,
+    SESS.run(main_network.update_model,
         feed_dict={main_network.state_in:np.vstack(train_batch.states()),
                    main_network.target_q_holder:target_q,
                    main_network.action_holder:train_batch.actions()})
@@ -337,7 +344,7 @@ class DNQNetwork:
         self.update_from_main_ops.append(
             var.assign((TAU*main_var.value()) + ((1-TAU)*var.value())))
     for op in self.update_from_main_ops:
-        sess.run(op)
+      SESS.run(op)
 
 
 class Bot:
@@ -365,11 +372,15 @@ class Bot:
   total_wins = 0
   last_10_results = []
 
+  trained = False
+
   def __init__(self):
-    sess = tf.InteractiveSession()
+    global SESS
+    SESS = tf.InteractiveSession()
     self.main_network = DNQNetwork('main')
     self.target_network = DNQNetwork('target')
-    sess.run(tf.global_variables_initializer())
+    tf.summary.FileWriter('out/graph', SESS.graph)
+    SESS.run(tf.global_variables_initializer())
     # Init the target network to be equal to the primary network.
     self.target_network.update_from_main_graph(self.main_network)
     self.experience_buffer = ExperienceBuffer()
@@ -457,6 +468,12 @@ class Bot:
       # Calculate rewards, and add experiences to buffer.
       self.add_battle_to_buffer(self.current_battle, self.experience_buffer)
 
+
+      print "total_steps = " + str(self.total_steps) + ", PRE_TRAIN_STEPS = " + str(PRE_TRAIN_STEPS)
+      print "explore = " + str(self.explore)
+      print ("total_reward = " + str(self.total_reward) +
+             ", total_reward_p = " + str(self.total_reward_p) +
+             ", total_reward_n = " + str(self.total_reward_n))
       print "battle.size() = " + str(self.current_battle.size())
       print "total_battles = " + str(self.total_battles)
       print "total_wins = " + str(self.total_wins)
@@ -465,8 +482,8 @@ class Bot:
 
 
     if self.total_steps > PRE_TRAIN_STEPS and self.total_steps % (UPDATE_FREQ) == 0:
-    print "train WTF"
-      Agent.train_batch(main_network,target_network, self.experience_buffer.sample(BATCH_SIZE))
+      # print "train WTF"
+      DNQNetwork.train_batch(self.main_network, self.target_network, self.experience_buffer.sample(BATCH_SIZE))
       # Set the target network to be equal to the primary network, with factor TAU = 0.001
       self.target_network.update_from_main_graph(self.main_network)
 
@@ -517,7 +534,7 @@ class Bot:
     for i in reversed(xrange(0, rewards.size-1)):
       rewards[i] = rewards[i] * GAMMA + rewards[i+1]
 
-    for i in range(0, battle.size()-1):
+    for i in range(0, battle.size()-2):
       # def append(self, state, action, reward, new_state, done):
       buffer.append(battle[i].inp, battle[i].action, rewards[i], battle[i+1].inp,i == battle.size()-1)
 
