@@ -234,21 +234,18 @@ def vstr(var):
 
 
 class DNQNetwork:
+  state_in = None
+  q_out = None
+  action_out = None
 
-  # TF-class objects.
-  state_in = None # Prob should rename input to state to be consistent with Bellman.
-  output = None
-  # tf_target_q = None
-  # action = None
-  # tf_train = None
-  reward_holder = None
+  target_q_holder = None
   action_holder = None
-  gradient_holders = None
-  gradients = None
-  update_batch = None
+  action_holder = None
+
+  update_model = None
 
   trainable_variables = None
-  update_from_super_ops = None
+  update_from_main_ops = None
 
   def __init__(self, myname):
     existing_tvars = tf.trainable_variables()
@@ -259,52 +256,36 @@ class DNQNetwork:
     # These lines established the feed-forward part of the network. The agent takes a state and produces an action.
     self.state_in= tf.placeholder(shape=[None,INP_SHAPE],dtype=tf.float32)
     hidden = slim.fully_connected(self.state_in,HID_SHAPE,biases_initializer=None,activation_fn=tf.nn.relu)
-    self.output = slim.fully_connected(hidden,OUT_SHAPE,activation_fn=tf.nn.softmax,biases_initializer=None)
-    # self.action = tf.argmax(self.out,1)
+    # TODO: split into separate advantage & action streams.
 
-    # The next six lines establish the training proceedure. We feed the reward and chosen action into the network
-    # to compute the loss, and use it to update the network.
+    self.q_out = slim.fully_connected(hidden,OUT_SHAPE,activation_fn=tf.nn.softmax,biases_initializer=None)
+    self.action_out = tf.argmax(self.q_out,1)
+
     self.reward_holder = tf.placeholder(shape=[None],dtype=tf.float32)
     self.action_holder = tf.placeholder(shape=[None],dtype=tf.int32)
 
-    # TODO Understand the formula here a little better.
-
-    # Make a 1-hot vector that corresponds to the action chosen?
-    indexes = tf.range(0, tf.shape(self.output)[0]) * tf.shape(self.output)[1] + self.action_holder
-    # Grab the output value that corresponds to that 1-hot vector?
-    responsible_outputs = tf.gather(tf.reshape(self.output, [-1]), indexes)
-
-    # Take the log of the value in output corresponds to the action.
-    # This forumula allows the network to accept Positive and Negative rewards/advantages.
+    # TODO: Take the log of the output values, to allow Positive and Negative rewards/advantages.
     # Taking a Log I think will stop divergence.
-    # Loss = Log(output_vals)*Advantage
     # https://medium.com/@awjuliani/super-simple-reinforcement-learning-tutorial-part-1-fd544fab149#.kbxmx7lfm
-    self.loss = -tf.reduce_mean(tf.log(responsible_outputs)*self.reward_holder)
 
+    #Below we obtain the loss by taking the sum of squares difference between the target and prediction Q values.
+    self.target_q_holder = tf.placeholder(shape=[None],dtype=tf.float32)
+    self.action_holder = tf.placeholder(shape=[None],dtype=tf.int32)
+    self.actions_onehot = tf.one_hot(self.action_holder,OUT_SHAPE,dtype=tf.float32)
+
+    relevant_q = tf.reduce_sum(tf.mul(self.q_out, self.actions_onehot), reduction_indices=1)
+
+    td_error = tf.square(self.target_q_holder - relevant_q)
+    loss = tf.reduce_mean(td_error)
+    trainer = tf.train.AdamOptimizer(learning_rate=0.0001)
+    self.update_model = trainer.minimize(loss)
+
+    # Get trainable vars so we can update Target network from Main network.
     self.trainable_variables = []
     updated_tvars = tf.trainable_variables()
-    # print "updated_tvars = \n" + vsstr(updated_tvars)
     for var in updated_tvars:
       if var not in existing_tvars:
         self.trainable_variables.append(var)
-    # for idx,var in enumerate(updated_tvars)
-    # print "trainable_variables = \n" + vsstr(self.trainable_variables)
-
-    self.gradient_holders = []
-    for idx,var in enumerate(self.trainable_variables):
-        placeholder = tf.placeholder(tf.float32,name=myname+'_'+str(idx)+'_holder')
-        self.gradient_holders.append(placeholder)
-
-    # Get the gradients that should apply to every variable to minimize loss?
-    # So basically the derivative that should be applied to the network.
-    self.gradients = tf.gradients(self.loss,self.trainable_variables)
-
-    # Apply those gradients with the learning rate.
-    # The caller of the agent grab .gradients for each action+reward, and then apply all the
-    # gradients at once by inputting them into gradient_holders to train.
-    # So we apply gradients in batches.
-    optimizer = tf.train.AdamOptimizer(learning_rate=LEARNING_RATE)
-    self.update_batch = optimizer.apply_gradients(zip(self.gradient_holders,self.trainable_variables))
 
 
   # You prob want to call argmax(get_output())
@@ -314,38 +295,48 @@ class DNQNetwork:
   # agent_out = Agent.get_output(state)
   # tmp = np.random.choice(agent_out,p=agent_out) # pick i based on probabilities
   # action = np.argmax(tmp == tmp)
-  def get_output(self, state):
-    return self.sess.run(self.output,feed_dict={self.state_in:[state]})[0]
+  def get_q_out(self, states):
+    return self.sess.run(self.q_out,feed_dict={self.state_in:states})
 
+  def get_actions(self, states):
+    return self.sess.run(self.action_out,feed_dict={self.state_in:states})
 
-  # Get the gradients to train network for each (state,action,reward) tuple.
-  def get_gradients(self, states, actions, rewards):
-    feed_dict={self.state_in:states,
-               self.action_holder:actions,
-               self.reward_holder:rewards}
-    return self.sess.run(self.gradients, feed_dict=feed_dict)
+  @staticmethod
+  def train_batch(main_network, target_network, train_batch):
+    # Get actions from Main, but Q-values for those actions from Target
+    # https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-0-q-learning-with-tables-and-neural-networks-d195264329d0#.odnj51rop
+    # Q[s,a] = Q[s,a] + lr*(r + FUTURE_Q_DISCOUNT*np.max(Q[s1,:]) - Q[s,a])
+    # Q-Target = r + FUTURE_Q_DISCOUNT*Q(s’,argmax(Q(s',a,\theta),'\theta')
 
+    # Get stuff for Bellman, i.e. what is the Q-value for the best move in the subsequent state?
+    actions_2 = sess.run(main_network.action_out,feed_dict={main_network.state_in:np.vstack(train_batch.states2())})
+    q_2 = sess.run(target_network.q_out,feed_dict={target_network.state_in:np.vstack(train_batch.states2())})
 
-  # Caller can batch gradients and apply a bunch at once.
-  # You could just call:
-  # train_with_gradients(get_gradients())
-  # or you could store sum of a few gradients, and call train once for a batch.
-  def train_with_gradients(self, gradients):
-    feed_dict = dict(zip(self.gradient_holders, gradients))
-    self.sess.run(self.update_batch, feed_dict=feed_dict)
+    end_multiplier = 1 - train_batch.dones() # Set the predicted future reward to 0 if it's the end state.
+    # Chose the Q value from target_network for each action taken by main_network
+    q_2_for_actions = q_out[range(BATCH_SIZE),actions_out]
+
+    # RHS of Bellman equation: Q(s, a) = r + gamma * max(Q(s1, a1))
+    target_q = train_batch.rewards() + (FUTURE_Q_DISCOUNT * q_2_for_actions * end_multiplier)
+
+    # Train the network with Q values from bellman equation, i.e. Assign RHS to LHS
+    sess.run(main_network.updateModel,
+        feed_dict={main_network.state_in:np.vstack(train_batch.states()),
+                   main_network.target_q_holder:target_q,
+                   main_network.action_holder:train_batch.actions()})
 
   def update_from_main_graph(self, main_graph):
     # ASSUME that .trainable_vars as in-step
-    if update_from_main_ops is None:
-      update_from_main_ops = []
+    if self.update_from_main_ops is None:
+      self.update_from_main_ops = []
       for i in range(0, len(self.trainable_variables)):
         var = self.trainable_variables[i]
         main_var = main_graph.trainable_variables[i]
         # weighted average with weight tau on main_var.
         # main_var = tau*main_var + (1-tau)*var
-        update_from_main_ops.append(
+        self.update_from_main_ops.append(
             var.assign((TAU*main_var.value()) + ((1-TAU)*var.value())))
-    for op in update_from_main_ops:
+    for op in self.update_from_main_ops:
         sess.run(op)
 
 
@@ -434,7 +425,7 @@ class Bot:
 
 
       # Take action based on a probability returned from the policy network.
-      agent_out = self.main_network.get_output(inp_state)
+      agent_out = self.main_network.get_q_out([inp_state])[0]
       action = np.argmax(agent_out)
 
       # TODO implement exploration algorithm here.
@@ -474,44 +465,13 @@ class Bot:
 
 
     if self.total_steps > PRE_TRAIN_STEPS and self.total_steps % (UPDATE_FREQ) == 0:
-      self.train()
+    print "train WTF"
+      Agent.train_batch(main_network,target_network, self.experience_buffer.sample(BATCH_SIZE))
+      # Set the target network to be equal to the primary network, with factor TAU = 0.001
+      self.target_network.update_from_main_graph(self.main_network)
+
     # Outputs
     return commands
-
-  def train(self):
-    # Train the Main and Target networks.
-    train_batch = self.experience_buffer.sample(BATCH_SIZE)
-    # Get actions from Main, but Q-values for those actions from Target
-# https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-0-q-learning-with-tables-and-neural-networks-d195264329d0#.odnj51rop
-    # Q[s,a] = Q[s,a] + lr*(r + FUTURE_Q_DISCOUNT*np.max(Q[s1,:]) - Q[s,a])
-    # Q-Target = r + FUTURE_Q_DISCOUNT*Q(s’,argmax(Q(s',a,\theta),'\theta')
-
-    actions_out = sess.run(main_network.predict,feed_dict={main_network.scalarInput:np.vstack(train_batch.states2())})
-    q2_out = sess.run(target_network.Qout,feed_dict={target_network.scalarInput:np.vstack(train_batch.states2())})
-
-    end_multiplier = 1 - train_batch.dones() # Set the predicted future reward to 0 if it's the end state.
-    doubleQ = q_out[range(BATCH_SIZE),actions_out]
-    targetQ = train_batch.rewards() + (FUTURE_Q_DISCOUNT*doubleQ * end_multiplier)
-
-
-    # Train the network with our target values.
-    sess.run(main_network.updateModel,
-        feed_dict={main_network.scalarInput:np.vstack(train_batch.states()),
-                   main_network.targetQ:targetQ,
-                   main_network.actions:train_batch.actions()})
-    # def states(self):
-    #   return np.array(self.buffer)[:,0]
-    # def actions(self):
-    #   return np.array(self.buffer)[:,1]
-    # def rewards(self):
-    #   return np.array(self.buffer)[:,2]
-    # def states2(self):
-    #   return np.array(self.buffer)[:,3]
-    # def dones(self):
-    #   return np.array(self.buffer)[:,4]
-
-    # Set the target network to be equal to the primary network, with factor TAU = 0.001
-    self.target_network.update_from_main_graph(self.main_network)
 
 
   def add_battle_to_buffer(self, battle, buffer):
