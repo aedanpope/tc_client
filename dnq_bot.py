@@ -59,13 +59,13 @@ OUT_SHAPE = 5 + MAX_ENEMY_UNITS
 # Learning and env params:
 
 # LEARNING_RATE = 0.01
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0001
 BUFFER_SIZE = 50000
 BATCH_SIZE = 32 #How many experiences to use for each training step.
 UPDATE_FREQ = 4 #How often to perform a training step.
 FUTURE_Q_DISCOUNT = .99 #Discount factor on future Q-values, discount on expected future reward.
 START_E = 1 #Starting chance of random action
-END_E = 0.1 #Final chance of random action
+END_E = 0.05 #0.1 #Final chance of random action
 
 # For harder learning, increase these params:
 
@@ -187,23 +187,31 @@ class Stage:
 
 class ExperienceBuffer():
 
-  def __init__(self):
-      self.buffer = []
+  buffer = None
+  win_buffer = None
+  lose_buffer = None
 
-  def append(self, state, action, reward, new_state, done):
+  def __init__(self):
+    self.buffer = []
+    self.win_buffer = []
+    self.lose_buffer = []
+
+  def append(self, state, action, reward, new_state, done, is_won):
     vec = [state, action, reward, new_state, done]
     if None in vec:
       raise Exception("Can't have a none in experience " + str(vec))
-    self.buffer.append(vec)
-    if len(self.buffer) >= BUFFER_SIZE:
-      # MAybe slow, consider using a boolean mask to change in-place
-      self.buffer = self.buffer[1:]
-        # numpy.delete(self.buffer, (0), axis=0)
 
-  # def add(self,experience):
-  #     if len(self.buffer) + len(experience) >= BUFFER_SIZE:
-  #         self.buffer[0:(len(experience)+len(self.buffer))-BUFFER_SIZE] = []
-  #     self.buffer.extend(experience)
+    if is_won:
+      buf = self.win_buffer
+    else:
+      buf = self.lose_buffer
+
+    buf.append(vec)
+    # MAybe slow, consider using a boolean mask to change in-place
+    # numpy.delete(self.buffer, (0), axis=0)
+    if len(buf) >= BUFFER_SIZE:
+      buf.pop(0)
+
 
   def states(self):
     return np.array(self.buffer)[:,0]
@@ -216,10 +224,12 @@ class ExperienceBuffer():
   def dones(self):
     return np.array(self.buffer)[:,4]
 
-  def sample(self,size):
+  def sample(self, size):
     # return np.reshape(np.array(random.sample(self.buffer,size)),[size,5])
+    wins = random.sample(self.win_buffer, min(size/2, len(self.win_buffer)))
+    losses = random.sample(self.lose_buffer , min(size/2, len(self.lose_buffer)))
     result = ExperienceBuffer()
-    result.buffer = random.sample(self.buffer,size)
+    result.buffer = wins + losses
     return result
 
 def vsstr(vars):
@@ -319,10 +329,20 @@ class DNQNetwork:
 
     end_multiplier = 1 - train_batch.dones() # Set the predicted future reward to 0 if it's the end state.
     # Chose the Q value from target_network for each action taken by main_network
-    q_2_for_actions = q_2[range(BATCH_SIZE),actions_2]
+    q_2_for_actions = q_2[range(len(train_batch.buffer)),actions_2]
 
     # RHS of Bellman equation: Q(s, a) = r + gamma * max(Q(s1, a1))
+    # end_multiplier sets Q(s1, a1) = 0 when there's no future (and then reward is not 0)
     target_q = train_batch.rewards() + (FUTURE_Q_DISCOUNT * q_2_for_actions * end_multiplier)
+
+    # print ""
+    # print "TRAIN BATCH"
+    # print "states_2 = " + str(train_batch.states2())
+    # print "actions_2 = " + str(actions_2)
+    # print "q_2 = " + str(q_2)
+    # print "end_multiplier = " + str(end_multiplier)
+    # print "q_2_for_actions = " + str(q_2_for_actions)
+    # print "target_q = " + str(target_q)
 
     # Train the network with Q values from bellman equation, i.e. Assign RHS to LHS
     SESS.run(main_network.update_model,
@@ -413,7 +433,11 @@ class Bot:
         self.battles.append(self.current_battle)
     self.current_battle.add_stage(stage)
 
-  def get_commands(self, game_state):
+  @staticmethod
+  def verbose(settings):
+    return V_PER_FRAME or settings.speed >= 10
+
+  def get_commands(self, game_state, settings):
     commands = []
 
     # Skip every second frame.
@@ -425,43 +449,43 @@ class Bot:
 
     stage = Stage(game_state)
     self.update_battle(stage)
+    stage.inp = Bot.battle_to_input(self.current_battle)
 
     if not self.current_battle.is_end:
       self.total_steps += 1
 
       # Figure out what action to take next.
-      inp_state = Bot.battle_to_input(self.current_battle)
-      if V_PER_FRAME: print "inp = " + str(inp_state)
+      if Bot.verbose(settings): print "inp = " + str(stage.inp)
 
 
       # Take action based on a probability returned from the policy network.
-      agent_out = self.main_network.get_q_out([inp_state])[0]
+      agent_out = self.main_network.get_q_out([stage.inp])[0]
       action = np.argmax(agent_out)
+      if Bot.verbose(settings): print "agent_out = " + str(agent_out)
+      # if V_PER_FRAME: print "tmp = " + str(tmp)
+      if Bot.verbose(settings): print "action = " + str(action)
 
       # TODO implement exploration algorithm here.
       # For now E-Greedy
       if self.total_steps < PRE_TRAIN_STEPS or np.random.rand(1) < self.explore:
+        if Bot.verbose(settings): print "Explore!"
         action = np.random.randint(0, OUT_SHAPE)
+      else:
+        if Bot.verbose(settings): print "Dont Explore."
       if PRE_TRAIN_STEPS < self.total_steps and self.explore > END_E:
         self.explore -= E_STEP
+      if Bot.verbose(settings): print "action2 = " + str(action)
 
       # Boltzmann etc. TODO
       # tmp = np.random.choice(agent_out,p=agent_out) # pick i based on probabilities
       # action = np.argmax(agent_out == tmp)
 
-      if V_PER_FRAME: print "agent_out = " + str(agent_out)
-      # if V_PER_FRAME: print "tmp = " + str(tmp)
-      if V_PER_FRAME: print "action = " + str(action)
-      stage.inp = inp_state
       stage.action = action
       commands += Bot.output_to_command(action, game_state)
 
     # TODO train the same number of positive and negative battles.
     # I guess we have to find a positive battle first.
 
-    if V_PER_FRAME: print ("total_reward = " + str(self.total_reward) +
-                           ", total_reward_p = " + str(self.total_reward_p) +
-                           ", total_reward_n = " + str(self.total_reward_n))
 
     if self.current_battle.is_end and not self.current_battle.trained:
       # Calculate rewards, and add experiences to buffer.
@@ -470,6 +494,8 @@ class Bot:
 
       print "total_steps = " + str(self.total_steps) + ", PRE_TRAIN_STEPS = " + str(PRE_TRAIN_STEPS)
       print "explore = " + str(self.explore)
+      print ("win_buffer = " + str(len(self.experience_buffer.win_buffer)) +
+             ", lose_buffer = " + str(len(self.experience_buffer.lose_buffer)))
       print ("total_reward = " + str(self.total_reward) +
              ", total_reward_p = " + str(self.total_reward_p) +
              ", total_reward_n = " + str(self.total_reward_n))
@@ -518,24 +544,26 @@ class Bot:
     #   rewards[-1] += 0.5 + Bot.calculate_advantage(battle[0], battle[-1])
     # PARTIAL REWARDS teach it not to take risks, so make the game easier and give complete rewards.
     if battle.is_won:
-      rewards[-1] += 1
+      reward = 1
     else:
-      rewards[-1] += -1
+      reward = -1
 
-    for i in range(0, battle.size()):
-      self.total_reward += rewards [i]
-      if rewards[i] > 0:
-        self.total_reward_p += rewards[i]
-      else:
-        self.total_reward_n += rewards[i]
+    rewards[-2] = reward
+
+    self.total_reward += reward
+
+    if reward > 0:
+      self.total_reward_p += reward
+    else:
+      self.total_reward_n += reward
 
     # Now give gradually discounted rewards to earlier actions.
-    for i in reversed(xrange(0, rewards.size-1)):
-      rewards[i] = rewards[i] * GAMMA + rewards[i+1]
+    # for i in reversed(xrange(0, rewards.size-1)):
+    #   rewards[i] = rewards[i] * GAMMA + rewards[i+1]
 
-    for i in range(0, battle.size()-2):
+    for i in range(0, battle.size()-1):
       # def append(self, state, action, reward, new_state, done):
-      buffer.append(battle[i].inp, battle[i].action, rewards[i], battle[i+1].inp,i == battle.size()-1)
+      buffer.append(battle[i].inp, battle[i].action, rewards[i], battle[i+1].inp,i == battle.size()-2, battle.is_won)
 
 
   @staticmethod
@@ -586,7 +614,8 @@ class Bot:
     if battle.size() == 0:
       raise Exception("No input without at least 1 battle frames")
     if battle.is_end:
-      raise Exception("No input from last battle frame")
+      return np.zeros(INP_SHAPE) # This state should never be used for training, because the prev action has done=true.
+      # raise Exception("No input from last battle frame")
 
     # So there should always be both a friendly+enemy unit in the last 2 stages.
 

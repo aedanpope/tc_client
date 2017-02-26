@@ -7,6 +7,7 @@ import tf_bot
 import bot_q_learner_simple_a
 import policy_bot
 import advantage_bot
+from map import Map
 import dnq_bot
 from focus_fire_bot import FocusFireBot
 from scanner import Scanner
@@ -15,16 +16,19 @@ import argparse
 V = False
 
 
+
+
 if __name__ == '__main__':
 
   parser = argparse.ArgumentParser('Run a StarCraft torch client.')
   parser.add_argument('-s', '--speed', type=int, default=1,
       help='The speed to run starcraft in, 1-13 with 13 being slowest')
-  parser.add_argument('-k', '--kite', type=int, default=2, choices=[2, 4],
+  parser.add_argument('-k', '--kite', type=int, default=2, choices=[2, 3, 4],
       help='Which kite map to load, options are 2 and 4')
 
   args = parser.parse_args()
   print 'Speed = ', str(args.speed)
+  speed = args.speed
 
 
 
@@ -67,7 +71,7 @@ if __name__ == '__main__':
 
   tc.send([
       # [tc_client.CMD.set_speed, 13],
-      [tc_client.CMD.set_speed, args.speed],
+      [tc_client.CMD.set_speed, speed],
       # [tc_client.CMD.set_gui, 0],
       # [tc_client.CMD.set_gui, 1],
       [tc_client.CMD.set_frameskip, 5],
@@ -98,7 +102,7 @@ if __name__ == '__main__':
     if V: print "total_battles = " + str(total_battles)
     if V: print "battles_won = " + str(battles_won)
     # Populate commands.
-    unit_commands = bot.get_commands(tc.state);
+    unit_commands = bot.get_commands(tc.state, Map({'speed':speed}));
     commands = [[tc_client.CMD.command_unit_protected] + unit_command for unit_command in unit_commands]
 
     # http://stackoverflow.com/questions/3762881/how-do-i-check-if-stdin-has-some-data
