@@ -25,15 +25,13 @@
 
 import tc_client
 import argparse
-import sys
+import time
 import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 import random
 import itertools
-import sys
 import math
-
 V_PER_FRAME = False  # Verbose
 
 FRAMES_PER_ACTION = 1
@@ -417,6 +415,7 @@ class Bot:
 
   def get_commands(self, game_state):
     commands = []
+
     # Skip every second frame.
     # This is because marine attacks take 2 frames, and so it can finish an attack started in a prev frame.
     # Need to make the current order an input into the NN so it can learn to return order-0 (no new order)
@@ -442,7 +441,7 @@ class Bot:
       # TODO implement exploration algorithm here.
       # For now E-Greedy
       if self.total_steps < PRE_TRAIN_STEPS or np.random.rand(1) < self.explore:
-        action = np.random.randint(0,OUT_SHAPE)
+        action = np.random.randint(0, OUT_SHAPE)
       if PRE_TRAIN_STEPS < self.total_steps and self.explore > END_E:
         self.explore -= E_STEP
 
@@ -455,7 +454,7 @@ class Bot:
       if V_PER_FRAME: print "action = " + str(action)
       stage.inp = inp_state
       stage.action = action
-      commands = Bot.output_to_command(action, game_state)
+      commands += Bot.output_to_command(action, game_state)
 
     # TODO train the same number of positive and negative battles.
     # I guess we have to find a positive battle first.
