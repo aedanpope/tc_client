@@ -1,0 +1,41 @@
+case boltzmann
+case: boltzmann
+hyperparameters: {'ACTION_STRATEGssY': 1}
+case: boltzmann
+hyperparameters: {'ACTION_STRATEGY': 1}
+case: boltzmann
+hyperparameters: {'ACTION_STRATEGY': 1}
+case: boltzmann
+hyperparameters: {'ACTION_STRATEGY': 1}
+case: boltzmann
+hyperparameters: {'ACTION_STRATEGY': 1}
+case: boltzmann
+hyperparameters: {'ACTION_STRATEGY': 1}
+case: boltzmann
+hyperparameters: {'ACTION_STRATEGY': 1}
+case: boltzmann
+hyperparameters: {'ACTION_STRATEGY': 1}
+case: boltzmann
+hyperparameters: {'ACTION_STRATEGY': 1}
+case: boltzmann
+hyperparameters: {'ACTION_STRATEGY': 1}
+case: boltzmann
+hyperparameters: {'ACTION_STRATEGY': 1}
+case: greedy
+hyperparameters: {'ACTION_STRATEGY': 0}
+case: greedy
+hyperparameters: {'ACTION_AASTRATEGY': 0}
+case: greedy
+hyperparameters: {'ACTION_AASTRATEGY': 0}
+case: greedy
+hyperparameters: {'ACTION_STRATEGY': 0}
+case: greedy
+hyperparameters: {'ACTION_STRATEGY': 0}
+case: greedy
+hyperparameters: {'ACTION_STRATEGY': 0}
+case: greedy
+hyperparameters: {'ACTION_STRATEGY': 0}
+case: greedy
+hyperparameters: {'ACTION_STRATEGY': 0}
+case: boltzmann
+hyperparameters: {'ACTION_STRATEGY': 1}

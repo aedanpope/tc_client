@@ -173,6 +173,7 @@ class State():
   #   """ Map of units keyed by ID """
   enemy_units = None
 
+  battle_just_ended = None
   battle_ended = None
   battle_won = None
 
@@ -189,7 +190,7 @@ class State():
       self.state_map[k] = v
     if self.state_map.frame != None:
       self._parse_frame() # Refresh units etc.
-    self._check_battle_ended()
+    self._update_battle_ended()
 
 
   def _parse_frame(self):
@@ -236,23 +237,26 @@ class State():
 
     # TODO Reward & Terminal
 
-  def _check_battle_ended(self):
+  def _update_battle_ended(self):
     # TODO only check if micro_battles mode.
-    # Compute if the battle's over and whos won.
-    self.battle_just_ended = False
-    friendly_count = 0 if not self.friendly_units else len(self.friendly_units)
-    enemy_count = 0 if not self.enemy_units else len(self.enemy_units)
-    if self.state_map.deaths != None:
-      for uid in self.state_map.deaths:
-        if self.friendly_units and uid in self.friendly_units:
-          friendly_count -= 1
-        elif self.enemy_units and uid in self.enemy_units:
-          enemy_count -= 1
-        # sometimes the dead unit ID is already removed from the lists,
-        # then we have to look in prev state to discern who died.
-    if friendly_count == 0 or enemy_count == 0:
-      self.battle_just_ended = True
-      self.battle_won = enemy_count == 0
+
+    # Assumes one unit per side. TODO sum over all units to generalize and simplify this.
+    self.friendly_life = 0 if not self.friendly_units else self.friendly_units.values()[0].get_life()
+    self.enemy_life = 0 if not self.enemy_units else self.enemy_units.values()[0].get_life()
+
+    currently_ended = self.friendly_life == 0 or self.enemy_life == 0
+
+    if not currently_ended:
+      self.battle_ended = False
+      self.battle_just_ended = False
+      self.battle_won = None
+      return
+
+    # Ended:
+    self.battle_just_ended = not self.battle_ended
+    self.battle_ended = True
+    self.battle_won = self.friendly_life > 0
+
 
   def pretty_print(self):
     print "State:"
