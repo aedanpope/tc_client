@@ -1,6 +1,5 @@
 ### USAGE:
-# p exercise.py -s 1 -k 2 -f results.txt -t 3 \
-# -hp "greedy={'ACTION_STRATEGY':Act.greed}, boltzmann={'ACTION_STRATEGY':Act.boltzmann}"
+# p exercise.py -s 1 -k 2 -t 3 -hp "greedy={'ACTION_STRATEGY':Act.Greed}, boltzmann={'ACTION_STRATEGY':Act.Boltzmann}" -f results/dnq_action_strategy_10k20k.txt
 
 import time
 import tc_client

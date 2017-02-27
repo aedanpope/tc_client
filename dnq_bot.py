@@ -59,8 +59,8 @@ OUT_SHAPE = 5 + MAX_ENEMY_UNITS
 
 
 Act = Map(
-    greed = 0, # highest Q value
-    boltzmann = 1, # infer that softmax(q_values) are probabilities.
+  Greedy = 0, # highest Q value
+  Boltzmann = 1, # infer that softmax(q_values) are probabilities.
 )
 
 # For harder learning, increase these params:
@@ -71,7 +71,7 @@ Act = Map(
 # Hyper Parameters
 # TODO move params into this as they need to be set for experiments.
 HP = Map(
-ACTION_STRATEGY = Act.boltzmann,
+ACTION_STRATEGY = Act.Boltzmann,
 
 # Configurable topology
 HID_1_SHAPE = 50,
@@ -122,6 +122,9 @@ def process_hyperparameters(hyperparameters):
       raise Exception("hyperparameters contains param not in HP: " + str(hyperparameters))
     HP[param] = val
     print "set hyperparameter " + param + " to " + str(val)
+    if not HP[param]:
+      raise Exception("param " + param + " was set to none. Check for typos in flag value of hyperparameters")
+
 
 
 class Battle:
@@ -545,32 +548,36 @@ class Bot:
       if verbose(): print "inp = " + str(stage.inp)
 
       agent_q = self.main_network.get_q_out([stage.inp])[0]
-
-      if HP.ACTION_STRATEGY == Act.Boltzmann:
-        action = self.main_network.get_boltzmann_action([stage.inp])[0]
-      else:
-        action = np.argmax(agent_q)
-
+      # Best action, we'll use this if we aren't training/exploring.
+      action = np.argmax(agent_q)
       if verbose(): print "agent_q = " + str(agent_q)
-      if verbose(): print "action = " + str(action)
+      if verbose(): print "best_action = " + str(action)
 
-      # TODO implement exploration algorithm here.
-      # For now E-Greedy
-      if self.total_steps < HP.PRE_TRAIN_STEPS or np.random.rand(1) < self.explore:
-        if verbose(): print "Explore!"
-        action = np.random.randint(0, OUT_SHAPE)
-      else:
-        if verbose(): print "Dont Explore."
-      if HP.PRE_TRAIN_STEPS < self.total_steps and self.explore > HP.END_E:
-        self.explore -= E_STEP
-      if verbose(): print "action2 = " + str(action)
+      if SETTINGS.mode == Mode.train:
+        if self.total_steps <= HP.PRE_TRAIN_STEPS:
+          # Still pre-training, always random actions.
+          action = np.random.randint(0, OUT_SHAPE)
 
+        elif HP.ACTION_STRATEGY == Act.Boltzmann:
+          action = self.main_network.get_boltzmann_action([stage.inp])[0]
+
+        elif HP.ACTION_STRATEGY == Act.Greedy:
+          if np.random.rand(1) < self.explore:
+            if verbose(): print "Explore!"
+            action = np.random.randint(0, OUT_SHAPE)
+          else:
+            if verbose(): print "Dont Explore."
+
+          if self.explore > HP.END_E:
+            self.explore -= E_STEP
+
+        else:
+          raise Exception("Unknown action strategy")
+
+      if verbose(): print "chosen_action = " + str(action)
 
       stage.action = action
       commands += Bot.output_to_command(action, game_state)
-
-    # TODO train the same number of positive and negative battles.
-    # I guess we have to find a positive battle first.
 
 
     if self.current_battle.is_end and not self.current_battle.trained:
