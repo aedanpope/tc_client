@@ -103,6 +103,7 @@ if __name__ == '__main__':
 
   if args.out_file:
     out_file = open(args.out_file, 'a')
+    print >>out_file, ""
     print >>out_file, "Command:"
     print >>out_file, str(' '.join(sys.argv))
 
@@ -116,6 +117,10 @@ if __name__ == '__main__':
   if out_file:
     print >>out_file, "default hyperparameters: " + str(dnq_bot.HP)
   print "default hyperparameters: " + str(dnq_bot.HP)
+
+  for (case,hyperparameters) in hyperparameter_sets.items():
+    # Just check they all parse.
+    dnq_bot.process_hyperparameters(hyperparameters)
 
   for (case,hyperparameters) in hyperparameter_sets.items():
     if out_file:

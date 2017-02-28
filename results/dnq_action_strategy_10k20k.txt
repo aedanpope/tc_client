@@ -1,0 +1,12 @@
+p exercise.py -s 1 -k 2 -t 3 -hp "greedy={'ACTION_STRATEGY':Act.Greedy}, boltzmann_a={'ACTION_STRATEGY':Act.Boltzmann}, boltzmann_b={'ACTION_STRATEGY':Act.Boltzmann_B}, boltzmann_c={'ACTION_STRATEGY':Act.Boltzmann_C}" -f results/dnq_action_strategy_10k20k.txt
+Command:
+exercise.py -s 1 -k 2 -t 3 -hp greedy={'ACTION_STRATEGY':Act.Greedy}, boltzmann_a={'ACTION_STRATEGY':Act.Boltzmann}, boltzmann_b={'ACTION_STRATEGY':Act.Boltzmann_B}, boltzmann_c={'ACTION_STRATEGY':Act.Boltzmann_C} -f results/dnq_action_strategy_10k20k.txt
+default hyperparameters: {'TAU': 0.001, 'LEARNING_RATE': 0.01, 'START_E': 1, 'FUTURE_Q_DISCOUNT': 0.99, 'HID_2_SHAPE': 30, 'BATCH_SIZE': 100, 'ANNEALING_STEPS': 50000, 'ACTION_STRATEGY': 1, 'BUFFER_SIZE': 50000, 'HID_1_SHAPE': 50, 'PRE_TRAIN_STEPS': 10000, 'END_E': 0.05, 'UPDATE_FREQ': 4}
+case: boltzmann_a
+hyperparameters: {'ACTION_STRATEGY': 1}
+
+Command:
+exercise.py -s 1 -k 2 -t 3 -hp greedy={'ACTION_STRATEGY':Act.Greedy}, boltzmann_a={'ACTION_STRATEGY':Act.Boltzmann}, boltzmann_b={'ACTION_STRATEGY':Act.Boltzmann_B}, boltzmann_c={'ACTION_STRATEGY':Act.Boltzmann_C} -f results/dnq_action_strategy_10k20k.txt
+default hyperparameters: {'TAU': 0.001, 'LEARNING_RATE': 0.01, 'START_E': 1, 'FUTURE_Q_DISCOUNT': 0.99, 'HID_2_SHAPE': 30, 'BATCH_SIZE': 100, 'ANNEALING_STEPS': 50000, 'ACTION_STRATEGY': 1, 'BUFFER_SIZE': 50000, 'HID_1_SHAPE': 50, 'PRE_TRAIN_STEPS': 10000, 'END_E': 0.05, 'UPDATE_FREQ': 4}
+case: boltzmann_a
+hyperparameters: {'ACTION_STRATEGY': 1}

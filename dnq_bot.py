@@ -60,9 +60,9 @@ OUT_SHAPE = 5 + MAX_ENEMY_UNITS
 
 Act = Map(
   Greedy = 0, # highest Q value
-  Boltzmann = 1, # infer that softmax(q_values) are probabilities.
-  Boltzmann_B = 2, # infer that softmax(q_values) are probabilities.
-  Boltzmann_C = 3, # infer that softmax(q_values) are probabilities.
+  Boltzmann = 1, # softmax(q_values/0.5) are action probs. Always use
+  Boltzmann_B = 2, # softmax(q_values/0.5) are action probs. Use when explore.
+  Boltzmann_C = 3, # softmax(q_values/0.5) are action probs. Random when explore otherwise use boltzmann
 )
 
 # For harder learning, increase these params:
@@ -124,7 +124,7 @@ def process_hyperparameters(hyperparameters):
       raise Exception("hyperparameters contains param not in HP: " + str(hyperparameters))
     HP[param] = val
     print "set hyperparameter " + param + " to " + str(val)
-    if not HP[param]:
+    if HP[param] is None:
       raise Exception("param " + param + " was set to none. Check for typos in flag value of hyperparameters")
 
 
@@ -584,11 +584,12 @@ class Bot:
           else:
             if verbose(): print "Dont Explore."
 
+        else:
+          raise Exception("Unknown action strategy")
+
         if self.total_steps >  HP.PRE_TRAIN_STEPS and self.explore > HP.END_E:
           self.explore -= E_STEP
 
-        else:
-          raise Exception("Unknown action strategy")
 
       if verbose(): print "chosen_action = " + str(action)
 
