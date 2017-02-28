@@ -59,10 +59,13 @@ OUT_SHAPE = 5 + MAX_ENEMY_UNITS
 
 
 Act = Map(
-  Greedy = 0, # highest Q value
-  Boltzmann = 1, # softmax(q_values/0.5) are action probs. Always use
-  Boltzmann_B = 2, # softmax(q_values/0.5) are action probs. Use when explore.
-  Boltzmann_C = 3, # softmax(q_values/0.5) are action probs. Random when explore otherwise use boltzmann
+  # highest Q value, else randomly explore.
+  Greedy = 0,
+
+  # Boltzmann: interpret softmax(q_values/0.5) as relative probabilities that we should take each action.
+  Boltzmann = 1, # Always use boltzmann action.
+  Boltzmann_B = 2, # Use boltzmann action when exploring.
+  Boltzmann_C = 3, # Use random action when exploring, otherwise use boltzmann action.
 )
 
 # For harder learning, increase these params:

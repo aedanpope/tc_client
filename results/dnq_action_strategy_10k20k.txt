@@ -10,3 +10,42 @@ exercise.py -s 1 -k 2 -t 3 -hp greedy={'ACTION_STRATEGY':Act.Greedy}, boltzmann_
 default hyperparameters: {'TAU': 0.001, 'LEARNING_RATE': 0.01, 'START_E': 1, 'FUTURE_Q_DISCOUNT': 0.99, 'HID_2_SHAPE': 30, 'BATCH_SIZE': 100, 'ANNEALING_STEPS': 50000, 'ACTION_STRATEGY': 1, 'BUFFER_SIZE': 50000, 'HID_1_SHAPE': 50, 'PRE_TRAIN_STEPS': 10000, 'END_E': 0.05, 'UPDATE_FREQ': 4}
 case: boltzmann_a
 hyperparameters: {'ACTION_STRATEGY': 1}
+trial 0
+train win rate: 0.0159193669932
+test win rate: 0.09
+trial 1
+train win rate: 0.00953213817228
+test win rate: 0.01
+trial 2
+train win rate: 0.0163781001404
+test win rate: 0.08
+case: boltzmann_c
+hyperparameters: {'ACTION_STRATEGY': 3}
+trial 0
+train win rate: 0.0166508987701
+test win rate: 0.0
+trial 1
+train win rate: 0.0133370902602
+test win rate: 0.03
+trial 2
+train win rate: 0.0127025036819
+test win rate: 0.48
+case: boltzmann_b
+hyperparameters: {'ACTION_STRATEGY': 2}
+trial 0
+train win rate: 0.00464229461991
+test win rate: 0.0
+trial 1
+train win rate: 0.0399294621489
+test win rate: 0.12
+trial 2
+train win rate: 0.134409969481
+test win rate: 0.65
+case: greedy
+hyperparameters: {'ACTION_STRATEGY': 0}
+trial 0
+train win rate: 0.0725093814308
+test win rate: 0.15
+trial 1
+train win rate: 0.119409866298
+test win rate: 0.42
