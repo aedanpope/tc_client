@@ -61,6 +61,8 @@ OUT_SHAPE = 5 + MAX_ENEMY_UNITS
 Act = Map(
   Greedy = 0, # highest Q value
   Boltzmann = 1, # infer that softmax(q_values) are probabilities.
+  Boltzmann_B = 2, # infer that softmax(q_values) are probabilities.
+  Boltzmann_C = 3, # infer that softmax(q_values) are probabilities.
 )
 
 # For harder learning, increase these params:
@@ -90,7 +92,7 @@ UPDATE_FREQ = 4, # 4 #How often to perform a training step.
 
 # PRE_TRAIN_STEPS needs to be to be more than BATCH_SIZE
 # PRE_TRAIN_STEPS requires a lot so we have at least a few wins once we start learning.
-PRE_TRAIN_STEPS = 10000, # 10000#How many steps of random actions before training begins.
+PRE_TRAIN_STEPS = 100, # 10000#How many steps of random actions before training begins.
 ANNEALING_STEPS = 20000, # 10000#How many steps of training to reduce startE to endE.
 )
 
@@ -383,7 +385,7 @@ class DNQNetwork:
 
   def get_boltzmann_action(self, state):
     t = 0.5
-    q_probs = sess.run(self.boltzmann_out,feed_dict={inputs:[state],self.boltzmann_denom:t})
+    q_probs = SESS.run(self.boltzmann_out,feed_dict={self.state_in:[state],self.boltzmann_denom:t})
     action_value = np.random.choice(q_probs[0],p=q_probs[0])
     action = np.argmax(q_probs[0] == action_value)
     return action
@@ -558,8 +560,22 @@ class Bot:
           # Still pre-training, always random actions.
           action = np.random.randint(0, OUT_SHAPE)
 
-        elif HP.ACTION_STRATEGY == Act.Boltzmann:
-          action = self.main_network.get_boltzmann_action([stage.inp])[0]
+        elif Act.Boltzmann <= HP.ACTION_STRATEGY and HP.ACTION_STRATEGY <= Act.Boltzmann_C:
+          # Always use boltzman action.
+          if HP.ACTION_STRATEGY == Act.Boltzmann:
+            action = self.main_network.get_boltzmann_action(stage.inp)
+
+          # when explore, use boltzman action.
+          elif HP.ACTION_STRATEGY == Act.Boltzmann_B:
+            if np.random.rand(1) < self.explore:
+              action = self.main_network.get_boltzmann_action(stage.inp)
+
+          # when explore, use random action - otherwise use boltzman action.
+          elif HP.ACTION_STRATEGY == Act.Boltzmann_C:
+            if np.random.rand(1) < self.explore:
+              action = np.random.randint(0, OUT_SHAPE)
+            else
+              action = self.main_network.get_boltzmann_action(stage.inp)
 
         elif HP.ACTION_STRATEGY == Act.Greedy:
           if np.random.rand(1) < self.explore:
@@ -568,8 +584,8 @@ class Bot:
           else:
             if verbose(): print "Dont Explore."
 
-          if self.explore > HP.END_E:
-            self.explore -= E_STEP
+        if self.total_steps >  HP.PRE_TRAIN_STEPS and self.explore > HP.END_E:
+          self.explore -= E_STEP
 
         else:
           raise Exception("Unknown action strategy")

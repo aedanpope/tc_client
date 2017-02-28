@@ -97,7 +97,7 @@ if __name__ == '__main__':
 
   # Make sure each Trial gets the same number of steps to train, not battles.
   # So that sneaky agents don't get extra training time except an epsilon in the last training battle.
-  training_steps = dnq_bot.HP.PRE_TRAIN_STEPS + dnq_bot.HP.ANNEALING_STEPS
+  training_steps = dnq_bot.HP.PRE_TRAIN_STEPS + int(1.5*dnq_bot.HP.ANNEALING_STEPS)
   test_battles = 100
 
   if args.out_file:
