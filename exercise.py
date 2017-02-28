@@ -38,6 +38,7 @@ if __name__ == '__main__':
       help='Different sets of hyperparameters to evaluate num --trials times.')
 
   args = parser.parse_args()
+
   print 'Speed = ', str(args.speed)
   speed = args.speed
 
@@ -102,6 +103,8 @@ if __name__ == '__main__':
 
   if args.out_file:
     out_file = open(args.out_file, 'a')
+    print >>out_file, "Command:"
+    print >>out_file, str(' '.join(sys.argv))
 
   hyperparameter_sets = Map({'default_params': {}})
   if args.hyperparameter_sets:

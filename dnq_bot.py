@@ -92,8 +92,8 @@ UPDATE_FREQ = 4, # 4 #How often to perform a training step.
 
 # PRE_TRAIN_STEPS needs to be to be more than BATCH_SIZE
 # PRE_TRAIN_STEPS requires a lot so we have at least a few wins once we start learning.
-PRE_TRAIN_STEPS = 100, # 10000#How many steps of random actions before training begins.
-ANNEALING_STEPS = 20000, # 10000#How many steps of training to reduce startE to endE.
+PRE_TRAIN_STEPS = 10000, # 10000#How many steps of random actions before training begins.
+ANNEALING_STEPS = 50000, # 10000#How many steps of training to reduce startE to endE.
 )
 
 E_STEP = (HP.START_E - HP.END_E)/HP.ANNEALING_STEPS
@@ -574,7 +574,7 @@ class Bot:
           elif HP.ACTION_STRATEGY == Act.Boltzmann_C:
             if np.random.rand(1) < self.explore:
               action = np.random.randint(0, OUT_SHAPE)
-            else
+            else:
               action = self.main_network.get_boltzmann_action(stage.inp)
 
         elif HP.ACTION_STRATEGY == Act.Greedy:
