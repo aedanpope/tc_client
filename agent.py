@@ -1,5 +1,7 @@
 
 from map import Map
+import tc_client
+import numpy as np
 from my_logging import log
 
 # MOVES = [(6,0), (-6,0), (0,6), (0,-6), (4,4), (4,-4), (-4,4), (-4,-4)]
@@ -8,6 +10,54 @@ MOVES = [(6,0), (-6,0), (0,6), (0,-6)]
 # friendly starts at (70,140), enemy starts at (100,140)
 X_MOVE_RANGE = (60,120) # X_MOVE_RANGE and Y_MOVE_RANGE should be the same magnitude.
 Y_MOVE_RANGE = (110,190)
+
+# Parameterization
+FRIENDLY_TENSOR_SIZE = 14
+ENEMY_TENSOR_SIZE = 8
+MAX_FRIENDLY_UNITS = 1 # 5 for marines
+MAX_ENEMY_UNITS = 1 # 5 for marines
+EXTRA = 1
+INP_SHAPE = EXTRA + MAX_FRIENDLY_UNITS * FRIENDLY_TENSOR_SIZE + MAX_ENEMY_UNITS * ENEMY_TENSOR_SIZE
+OUT_SHAPE = 1 + len(MOVES) + MAX_ENEMY_UNITS
+
+# Represents a series of Battles
+class War:
+  battles = []
+  current_battle = None
+  total_battles = 0
+  total_wins = 0
+  last_10_results = []
+
+
+  def update_current_battle(self, stage):
+    if not self.current_battle:
+      self.total_battles += 1
+      self.current_battle = Battle()
+      self.battles.append(self.current_battle)
+
+    if self.current_battle.is_end:
+      if stage.is_end:
+        return # Don't accumulate more end states.
+      else:
+        # Make a new battle.
+        self.total_battles += 1
+        if self.current_battle.is_won:
+          self.total_wins += 1
+        self.last_10_results.append(self.current_battle.is_won)
+        if (len(self.last_10_results) > 10):
+          self.last_10_results = self.last_10_results[-10:]
+
+        self.current_battle = Battle()
+        self.battles.append(self.current_battle)
+    self.current_battle.add_stage(stage)
+
+
+  def print_summary(self):
+    print "battle.size() = " + str(self.current_battle.size())
+    print "total_battles = " + str(self.total_battles)
+    print "total_wins = " + str(self.total_wins)
+    print "win_ratio = " + str(self.total_wins / float(self.total_battles))
+    print "last_10 = " + str(sum(self.last_10_results)) + " / " + str(len(self.last_10_results))
 
 
 # Represents a whole mini-battle.
@@ -124,8 +174,8 @@ def output_to_command(action, state):
   # Consider simplifying this to just run away from the enemy... So we only have 2 actions.
   elif 1 <= a and a <= len(MOVES):
     del_x, del_y = MOVES[a-1]
-    move_x = Bot.constrain(friendly.x + del_x, X_MOVE_RANGE)
-    move_y = Bot.constrain(friendly.y + del_y, Y_MOVE_RANGE)
+    move_x = constrain(friendly.x + del_x, X_MOVE_RANGE)
+    move_y = constrain(friendly.y + del_y, Y_MOVE_RANGE)
     commands.append([friendly.id, tc_client.UNIT_CMD.Move, -1, move_x, move_y])
   elif a == len(MOVES)+1:
     commands.append([friendly.id, tc_client.UNIT_CMD.Attack_Unit, enemy.id])
@@ -159,16 +209,16 @@ def battle_to_input(battle):
   log(50, "f1 = " + str(f1))
   log(50, "e1 = " + str(e1))
 
-  return ([Bot.norm(battle.size(), ([0,64]))] +
-          Bot.unit_to_vector(f0, True) + Bot.unit_to_vector(f1, True) +
-          Bot.unit_to_vector(e0, False) + Bot.unit_to_vector(e1, False))
+  return ([norm(battle.size(), ([0,64]))] +
+          unit_to_vector(f0, True) + unit_to_vector(f1, True) +
+          unit_to_vector(e0, False) + unit_to_vector(e1, False))
 
 
 def unit_to_vector(unit, is_friendly):
   unit_vector = [
           # 1.0 if is_friendly else -1.0,
-          Bot.norm(unit.x, (X_MOVE_RANGE)),
-          Bot.norm(unit.y, (Y_MOVE_RANGE)),
+          norm(unit.x, (X_MOVE_RANGE)),
+          norm(unit.y, (Y_MOVE_RANGE)),
           float(unit.get_life()) / unit.get_max_life(),
           float(unit.groundCD) / unit.maxCD
           ]
@@ -201,5 +251,27 @@ def norm(x, min_max):
 def constrain(x, min_max):
   # truncate X to fit in [x_min,x_max]
   return min(max(x,min_max[0]),min_max[1])
+
+
+def write_battle_to_experience_buffer(battle, buffer):
+  if battle.size() == 1:
+    print "no experience from battle with <2 stages"
+    return
+  if not battle[0].friendly_unit or not battle[0].enemy_unit:
+    raise Exception("No units in initial battle state.")
+
+  # We discount future rewards at training time, instead of here.
+
+  for i in range(0, battle.size()-1):
+    # def append(self, state, action, reward, new_state, done):
+    reward = 0
+    # reward nonzero in final stage.
+    if i == battle.size()-2:
+      if battle.is_won:
+        reward = 1
+      else:
+        reward = -1
+
+    buffer.append(battle[i].inp, battle[i].action, reward, battle[i+1].inp,i == battle.size()-2, battle.is_won)
 
 

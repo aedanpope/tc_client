@@ -16,8 +16,8 @@ import advantage_bot
 from dnq_bot import Settings
 from dnq_bot import Mode
 from map import Map
-import logging
-from logging import log
+import my_logging
+from my_logging import log
 import dnq_bot
 from focus_fire_bot import FocusFireBot
 from scanner import Scanner
@@ -49,7 +49,7 @@ if __name__ == '__main__':
   speed = args.speed
 
   settings = Settings()
-  logging.VERBOSITY = speed
+  my_logging.VERBOSITY = speed
   settings.mode = Mode.train
 
 
@@ -191,12 +191,12 @@ if __name__ == '__main__':
             sc = Scanner(line)
             speed = sc.next_int()
             print "Setting speed to " + str(speed)
-            logging.VERBOSITY = speed
+            my_logging.VERBOSITY = speed
             commands.append([tc_client.CMD.set_speed, speed])
             time.sleep(1)
 
 
-        if V: print "commands = " + str(commands)
+        log("commands = " + str(commands), 30)
 
         # Send the orders.
         tc.send(commands)

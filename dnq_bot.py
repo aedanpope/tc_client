@@ -34,6 +34,7 @@ import random
 import itertools
 import math
 import agent
+from experience import ExperienceBuffer
 from agent import Battle
 from agent import Stage
 from my_logging import log
@@ -53,17 +54,6 @@ FRAMES_PER_ACTION = 1
 
 MAX_FRIENDLY_LIFE = None
 MAX_ENEMY_LIFE = None
-
-# Parameterization
-FRIENDLY_TENSOR_SIZE = 14
-ENEMY_TENSOR_SIZE = 8
-MAX_FRIENDLY_UNITS = 1 # 5 for marines
-MAX_ENEMY_UNITS = 1 # 5 for marines
-EXTRA = 1
-INP_SHAPE = EXTRA + MAX_FRIENDLY_UNITS * FRIENDLY_TENSOR_SIZE + MAX_ENEMY_UNITS * ENEMY_TENSOR_SIZE
-
-
-OUT_SHAPE = 1 + len(agent.MOVES) + MAX_ENEMY_UNITS
 
 
 Act = Map(
@@ -106,8 +96,9 @@ UPDATE_FREQ = 4, # 4 #How often to perform a training step.
 PRE_TRAIN_STEPS = 10000, # 10000#How many steps of random actions before training begins.
 ANNEALING_STEPS = 50000, # 10000#How many steps of training to reduce startE to endE.
 )
-
-E_STEP = (HP.START_E - HP.END_E)/HP.ANNEALING_STEPS
+# Derived hyperparameters
+def E_STEP():
+  return (HP.START_E - HP.END_E)/HP.ANNEALING_STEPS
 
 
 # TF Session
@@ -136,56 +127,9 @@ def process_hyperparameters(hyperparameters):
       raise Exception("param " + param + " was set to none. Check for typos in flag value of hyperparameters")
 
 
-class ExperienceBuffer():
-
-  buffer = None
-  win_buffer = None
-  lose_buffer = None
-
-  def __init__(self):
-    self.buffer = []
-    self.win_buffer = []
-    self.lose_buffer = []
-
-  def append(self, state, action, reward, new_state, done, is_won):
-    vec = [state, action, reward, new_state, done]
-    if None in vec:
-      raise Exception("Can't have a none in experience " + str(vec))
-
-    if is_won:
-      buf = self.win_buffer
-    else:
-      buf = self.lose_buffer
-
-    buf.append(vec)
-    # MAybe slow, consider using a boolean mask to change in-place
-    # numpy.delete(self.buffer, (0), axis=0)
-    if len(buf) >= HP.BUFFER_SIZE:
-      buf.pop(0)
-
-
-  def states(self):
-    return np.array(self.buffer)[:,0]
-  def actions(self):
-    return np.array(self.buffer)[:,1]
-  def rewards(self):
-    return np.array(self.buffer)[:,2]
-  def states2(self):
-    return np.array(np.array(self.buffer)[:,3])
-  def dones(self):
-    return np.array(self.buffer)[:,4]
-
-  def sample(self, size):
-    # return np.reshape(np.array(random.sample(self.buffer,size)),[size,5])
-    wins = random.sample(self.win_buffer, min(size/2, len(self.win_buffer)))
-    losses = random.sample(self.lose_buffer , min(size/2, len(self.lose_buffer)))
-    result = ExperienceBuffer()
-    result.buffer = wins + losses
-    random.shuffle(result.buffer)
-    return result
-
 def vsstr(vars):
   return ',\n'.join([vstr(v) for v in vars])
+
 
 def vstr(var):
     return str(var.initial_value)
@@ -231,7 +175,7 @@ class DNQNetwork:
     # These lines established the feed-forward part of the network. The agent takes a state and produces an action.
     # self.state_in= tf.placeholder(shape=[INP_SHAPE],dtype=tf.float32, name=("state_in_" + myname))
 
-    self.state_in= tf.placeholder(shape=[None,INP_SHAPE],dtype=tf.float32, name=self.name_var("state_in"))
+    self.state_in= tf.placeholder(shape=[None,agent.INP_SHAPE],dtype=tf.float32, name=self.name_var("state_in"))
 
     hid_1 = slim.fully_connected(self.state_in,HP.HID_1_SHAPE,
                                   biases_initializer=None,activation_fn=tf.nn.relu, scope=self.name_var("hidden1"))
@@ -239,7 +183,7 @@ class DNQNetwork:
                                   biases_initializer=None,activation_fn=tf.nn.relu, scope=self.name_var("hidden2"))
     # TODO: split into separate advantage & action streams.
 
-    self.q_out = slim.fully_connected(hid_2,OUT_SHAPE,
+    self.q_out = slim.fully_connected(hid_2,agent.OUT_SHAPE,
                                       activation_fn=tf.nn.tanh,biases_initializer=None,
                                       # activation_fn=tf.nn.softmax,biases_initializer=None,
                                       scope=self.name_var("q_out"))
@@ -257,7 +201,7 @@ class DNQNetwork:
     #Below we obtain the loss by taking the sum of squares difference between the target and prediction Q values.
     self.target_q_holder = tf.placeholder(shape=[None],dtype=tf.float32, name=self.name_var("target_q_holder"))
     self.action_holder = tf.placeholder(shape=[None],dtype=tf.int32, name=self.name_var("action_holder"))
-    actions_onehot = tf.one_hot(self.action_holder,OUT_SHAPE,dtype=tf.float32, name=self.name_var("actions_onehot"))
+    actions_onehot = tf.one_hot(self.action_holder,agent.OUT_SHAPE,dtype=tf.float32, name=self.name_var("actions_onehot"))
 
     # Get the Q values from the network for the specified actions in action_holder.
     relevant_q = tf.reduce_sum(tf.mul(self.q_out, actions_onehot), reduction_indices=1)
@@ -309,6 +253,9 @@ class DNQNetwork:
 
   @staticmethod
   def train_batch(main_network, target_network, train_batch):
+    """
+      train_batch is an experience.ExperienceTable
+    """
     # Get actions from Main, but Q-values for those actions from Target
     # https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-0-q-learning-with-tables-and-neural-networks-d195264329d0#.odnj51rop
     # Q[s,a] = Q[s,a] + lr*(r + FUTURE_Q_DISCOUNT*np.max(Q[s1,:]) - Q[s,a])
@@ -320,7 +267,7 @@ class DNQNetwork:
 
     end_multiplier = 1 - train_batch.dones() # Set the predicted future reward to 0 if it's the end state.
     # Chose the Q value from target_network for each action taken by main_network
-    q_2_for_actions = q_2[range(len(train_batch.buffer)),actions_2]
+    q_2_for_actions = q_2[range(train_batch.len()),actions_2]
 
     # RHS of Bellman equation: Q(s, a) = r + gamma * max(Q(s1, a1))
     # end_multiplier sets Q(s1, a1) = 0 when there's no future (and then reward is not 0)
@@ -378,17 +325,8 @@ class Bot:
   experience_buffer = None
   total_steps = None
 
-  n = None
-
-  battles = []
-  current_battle = None
-  MAX_FRIENDLY_LIFE = None
-  MAX_ENEMY_LIFE = None
-  total_battles = 0
-  total_wins = 0
-  last_10_results = []
-
-  trained = False
+  frame = None
+  war = None
 
   def __init__(self, hyperparameters=None):
     # Set hyperparams in the global vars in this file.
@@ -414,32 +352,10 @@ class Bot:
     self.total_reward = 0
     self.total_reward_p = 0
     self.total_reward_n = 0
-    self.n = 0
+    self.frame = 0
     self.explore = HP.START_E
     self.total_steps = 0
-
-
-  def update_battle(self, stage):
-    if not self.current_battle:
-      self.total_battles += 1
-      self.current_battle = Battle()
-      self.battles.append(self.current_battle)
-
-    if self.current_battle.is_end:
-      if stage.is_end:
-        return # Don't accumulate more end states.
-      else:
-        # Make a new battle.
-        self.total_battles += 1
-        if self.current_battle.is_won:
-          self.total_wins += 1
-        self.last_10_results.append(self.current_battle.is_won)
-        if (len(self.last_10_results) > 10):
-          self.last_10_results = self.last_10_results[-10:]
-
-        self.current_battle = Battle()
-        self.battles.append(self.current_battle)
-    self.current_battle.add_stage(stage)
+    self.war = agent.War()
 
 
   def get_commands(self, game_state, settings):
@@ -447,18 +363,16 @@ class Bot:
     SETTINGS = settings
     commands = []
 
-    # Skip every second frame.
-    # This is because marine attacks take 2 frames, and so it can finish an attack started in a prev frame.
-    # Need to make the current order an input into the NN so it can learn to return order-0 (no new order)
-    # if already performing a good attack.):
-    self.n += 1
-    if self.n % FRAMES_PER_ACTION == 1: return []
+    self.frame += 1
+    # Maybe want to skip frames or something, we don't need this anymore since prev state is an input
+    # into Network so it can learn velocity & not to cancel current order.
+
 
     stage = Stage(game_state)
-    self.update_battle(stage)
-    stage.inp = agent.battle_to_input(self.current_battle)
+    self.war.update_current_battle(stage)
+    stage.inp = agent.battle_to_input(self.war.current_battle)
 
-    if not self.current_battle.is_end:
+    if not self.war.current_battle.is_end:
       self.total_steps += 1
 
       # Figure out what action to take next.
@@ -473,7 +387,7 @@ class Bot:
       if SETTINGS.mode == Mode.train:
         if self.total_steps <= HP.PRE_TRAIN_STEPS:
           # Still pre-training, always random actions.
-          action = np.random.randint(0, OUT_SHAPE)
+          action = np.random.randint(0, agent.OUT_SHAPE)
 
         # Always use boltzman action.
         elif HP.ACTION_STRATEGY == Act.Boltzmann:
@@ -487,7 +401,7 @@ class Bot:
         # When explore, use random action - otherwise use boltzman action.
         elif HP.ACTION_STRATEGY == Act.Boltzmann_C:
           if np.random.rand(1) < self.explore:
-            action = np.random.randint(0, OUT_SHAPE)
+            action = np.random.randint(0, agent.OUT_SHAPE)
           else:
             action = self.main_network.get_boltzmann_action(stage.inp)
 
@@ -495,7 +409,7 @@ class Bot:
         elif HP.ACTION_STRATEGY == Act.Greedy:
           if np.random.rand(1) < self.explore:
             log("Explore!")
-            action = np.random.randint(0, OUT_SHAPE)
+            action = np.random.randint(0, agent.OUT_SHAPE)
           else:
             log("Dont Explore.")
 
@@ -503,7 +417,7 @@ class Bot:
           raise Exception("Unknown action strategy")
 
         if self.total_steps >  HP.PRE_TRAIN_STEPS and self.explore > HP.END_E:
-          self.explore -= E_STEP
+          self.explore -= E_STEP()
 
 
       log("chosen_action = " + str(action))
@@ -512,10 +426,19 @@ class Bot:
       commands += agent.output_to_command(action, game_state)
 
 
-    if self.current_battle.is_end and not self.current_battle.trained:
+    if self.war.current_battle.is_end and not self.war.current_battle.trained:
       # Calculate rewards, and add experiences to buffer.
-      self.add_battle_to_buffer(self.current_battle, self.experience_buffer)
+      print "Store Battle"
+      self.war.current_battle.trained = True
 
+      agent.write_battle_to_experience_buffer(self.war.current_battle, self.experience_buffer)
+
+      reward = 1 if self.war.current_battle else -1
+      self.total_reward += reward
+      if reward > 0:
+        self.total_reward_p += reward
+      else:
+        self.total_reward_n += reward
 
       print "total_steps = " + str(self.total_steps) + ", PRE_TRAIN_STEPS = " + str(HP.PRE_TRAIN_STEPS)
       print "explore = " + str(self.explore)
@@ -524,17 +447,13 @@ class Bot:
       print ("total_reward = " + str(self.total_reward) +
              ", total_reward_p = " + str(self.total_reward_p) +
              ", total_reward_n = " + str(self.total_reward_n))
-      print "battle.size() = " + str(self.current_battle.size())
-      print "total_battles = " + str(self.total_battles)
-      print "total_wins = " + str(self.total_wins)
-      print "win_ratio = " + str(self.total_wins / float(self.total_battles))
-      print "last_10 = " + str(sum(self.last_10_results)) + " / " + str(len(self.last_10_results))
+      self.war.print_summary()
 
 
     # Only train when not at the end of the battle, so training time is fairly proportioned over time spent fighting.
     # So bots that end battles slowly don't see less battles because of it.
     # See similar logic in exercise.py
-    if (not self.current_battle.is_end and
+    if (not self.war.current_battle.is_end and
         self.total_steps > HP.PRE_TRAIN_STEPS and
         self.total_steps % (HP.UPDATE_FREQ) == 0):
       # print "train WTF"
@@ -545,51 +464,5 @@ class Bot:
     # Outputs
     return commands
 
-
-  def add_battle_to_buffer(self, battle, buffer):
-    print "\nTRAIN BATTLE"
-
-    if battle.trained:
-      raise Exception("Battle already trained")
-    else:
-      battle.trained = True
-    if battle.size() == 1:
-      print "skipping training empty battle"
-      return
-    if not battle[0].friendly_unit or not battle[0].enemy_unit:
-      raise Exception("No units in initial battle state.")
-
-    global MAX_FRIENDLY_LIFE
-    global MAX_ENEMY_LIFE
-    MAX_FRIENDLY_LIFE = battle[0].friendly_unit.get_max_life()
-    MAX_ENEMY_LIFE = battle[0].enemy_unit.get_max_life()
-
-    # First calculate rewards.
-    rewards = np.zeros(battle.size())
-
-    # Final reward = 1 for winning, -0.5 to 0.5 for doing some damage.
-    # if battle.is_won:
-    #   rewards[-1] = 1
-    # else:
-    #   rewards[-1] += 0.5 + Bot.calculate_advantage(battle[0], battle[-1])
-    # PARTIAL REWARDS teach it not to take risks, so make the game easier and give complete rewards.
-    if battle.is_won:
-      reward = 1
-    else:
-      reward = -1
-
-    rewards[-2] = reward
-
-    self.total_reward += reward
-    if reward > 0:
-      self.total_reward_p += reward
-    else:
-      self.total_reward_n += reward
-
-    # NOTE: We discount future rewards at training time, instead of here.
-
-    for i in range(0, battle.size()-1):
-      # def append(self, state, action, reward, new_state, done):
-      buffer.append(battle[i].inp, battle[i].action, rewards[i], battle[i+1].inp,i == battle.size()-2, battle.is_won)
 
 
