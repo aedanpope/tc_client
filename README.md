@@ -52,7 +52,7 @@ The main advantage of TorchCraft is that one can build a StarCraft agent in a Un
 
 ### Python Client for BWAPI
 
-TorchCraft includes a [Lua client](https://github.com/TorchCraft/TorchCraft/blob/master/init.lua).
+TorchCraft includes a [Lua client](https://github.com/TorchCraft/TorchCraft/blob/master/init.lua), with some backwards engineering we were able to create a Python Client for the TorchCraft server in [tc_client.py](tc_client.py)
 
 
 ### TensorFlow Examples
