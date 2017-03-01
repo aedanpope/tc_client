@@ -428,7 +428,6 @@ class Bot:
 
     if self.war.current_battle.is_end and not self.war.current_battle.trained:
       # Calculate rewards, and add experiences to buffer.
-      print "Store Battle"
       self.war.current_battle.trained = True
 
       agent.write_battle_to_experience_buffer(self.war.current_battle, self.experience_buffer)
@@ -463,6 +462,10 @@ class Bot:
 
     # Outputs
     return commands
+
+  def close(self):
+    pass
+    # Nothing to clean up.
 
 
 

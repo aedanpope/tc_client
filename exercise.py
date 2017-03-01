@@ -13,6 +13,7 @@ import tf_bot
 import bot_q_learner_simple_a
 import policy_bot
 import advantage_bot
+import experience
 from dnq_bot import Settings
 from dnq_bot import Mode
 from map import Map
@@ -35,12 +36,16 @@ if __name__ == '__main__':
   parser.add_argument('-k', '--kite', type=int, default=2, choices=[2, 3, 4],
       help='Which kite map to load, options are 2 and 4')
   parser.add_argument('-f', '--out_file', help='File to log results of trials to.')
-  parser.add_argument('-t', '--trials', type=int, default=5,
+  parser.add_argument('-t', '--trials', type=int, default=1,
       help='Number of trials to run for each config')
+  parser.add_argument('--test_battles', type=int, default=100,
+      help='Number of test battles to run to evaluate a trial.')
   parser.add_argument('-hp', '--hyperparameter_sets',
       help='Different sets of hyperparameters to evaluate num --trials times.')
   parser.add_argument('-v', '--forever', default=False, action='store_true',
       help='Run the first trial forever.')
+  parser.add_argument('--record',
+      help='Record random experiences to this filename.')
 
 
   args = parser.parse_args()
@@ -137,10 +142,16 @@ if __name__ == '__main__':
     training_steps = dnq_bot.HP.PRE_TRAIN_STEPS + int(1.5*dnq_bot.HP.ANNEALING_STEPS)
     if (args.forever):
       training_steps = 99999999
-    test_battles = 100
+    test_battles = args.test_battles
 
     for trial in range(0,args.trials):
-      bot = dnq_bot.Bot(hyperparameters)
+      if args.record:
+        print "ExperienceRecordingBot"
+        bot = experience.ExperienceRecordingBot(args.record)
+      else:
+        print "dnq_bot.Bot"
+        bot = dnq_bot.Bot(hyperparameters)
+
 
       settings.mode = Mode.train
       steps = 0
@@ -148,7 +159,7 @@ if __name__ == '__main__':
       train_battles_won = 0
       test_battles_fought = 0
       test_battles_won = 0
-      while test_battles_fought < test_battles:
+      while steps <= training_steps or test_battles_fought <= test_battles:
         update = tc.receive()
         commands = []
 
@@ -201,6 +212,7 @@ if __name__ == '__main__':
         # Send the orders.
         tc.send(commands)
 
+      bot.close()
       print "trial " + str(trial)
       print "train win rate: " + str(float(train_battles_won) / train_battles_fought)
       print "test win rate: " + str(float(test_battles_won) / test_battles_fought)

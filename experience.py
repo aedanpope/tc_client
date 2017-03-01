@@ -2,6 +2,7 @@
 import experience_pb2
 import sys
 import random
+import agent
 import numpy as np
 
 class ExperienceTable:
@@ -38,8 +39,8 @@ class ExperienceBuffer():
     self.buffer_size = buffer_size
 
   def append(self, state, action, reward, new_state, done, is_won):
-    vec = [state, action, reward, new_state, done]
-    if None in vec:
+    row = [state, action, reward, new_state, done]
+    if None in row:
       raise Exception("Can't have a none in experience " + str(vec))
 
     if is_won:
@@ -47,7 +48,7 @@ class ExperienceBuffer():
     else:
       buf = self.lose_buffer
 
-    buf.append(vec)
+    buf.append(row)
     # MAybe slow, consider using a boolean mask to change in-place
     # numpy.delete(self.buffer, (0), axis=0)
     if len(buf) >= self.buffer_size:
@@ -66,17 +67,36 @@ class ExperienceBuffer():
     return ExperienceTable(self.win_buffer + self.lose_buffer)
 
 
+def add_experience_to_list(experience_list, row, is_won):
+  exp = experience_list.experience.add()
+  exp.state.extend(row[0])
+  exp.action = row[1]
+  exp.reward = row[2]
+  exp.new_state.extend(row[3])
+  exp.done = row[4]
+  exp.is_won = is_won
+
+
+def add_experiences_to_list(experience_list, table, is_won):
+  for row in table:
+    add_experience_to_list(experience_list, row, is_won)
+
+
+# Usage:
+# p exercise.py -s 1 -k 2 -t 1 -hp "foo={'PRE_TRAIN_STEPS':1000, 'ANNEALING_STEPS':0}" --test_battles=0  --record=data/1000steps.pb
 class ExperienceRecordingBot:
   war = None
-
-
-  def __init__(self):
+  experience_buffer = None
+  file_path = None
+  def __init__(self, file_path):
     self.war = agent.War()
+    self.experience_buffer = ExperienceBuffer()
+    self.file_path = file_path
 
 
   def get_commands(self, game_state, settings):
     commands = []
-    stage = Stage(game_state)
+    stage = agent.Stage(game_state)
     self.war.update_current_battle(stage)
     stage.inp = agent.battle_to_input(self.war.current_battle)
 
@@ -85,7 +105,26 @@ class ExperienceRecordingBot:
       stage.action = action
       commands += agent.output_to_command(action, game_state)
 
+    if self.war.current_battle.is_end and not self.war.current_battle.trained:
+      self.war.current_battle.trained = True
+      agent.write_battle_to_experience_buffer(self.war.current_battle, self.experience_buffer)
+      print ("win_buffer = " + str(len(self.experience_buffer.win_buffer)) +
+             ", lose_buffer = " + str(len(self.experience_buffer.lose_buffer)))
+      self.war.print_summary()
+
     return commands
+
+
+  def close(self):
+    experience_list = experience_pb2.ExperienceList()
+    add_experiences_to_list(experience_list, self.experience_buffer.win_buffer, True)
+    add_experiences_to_list(experience_list, self.experience_buffer.lose_buffer, False)
+    f = open(self.file_path, 'wb')
+    f.write(experience_list.SerializeToString())
+    f.close()
+
+    pass
+    # TODO write experiences to file.
 
 
 class ExperienceIO:

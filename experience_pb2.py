@@ -18,11 +18,41 @@ _sym_db = _symbol_database.Default()
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='experience.proto',
   package='',
-  serialized_pb=_b('\n\x10\x65xperience.proto\"l\n\nExperience\x12\r\n\x05state\x18\x01 \x03(\x01\x12\x0e\n\x06\x61\x63tion\x18\x02 \x01(\x05\x12\x0e\n\x06reward\x18\x03 \x01(\x01\x12\x11\n\tnew_state\x18\x04 \x03(\x01\x12\x0c\n\x04\x64one\x18\x05 \x01(\x08\x12\x0e\n\x06is_won\x18\x06 \x01(\x08')
+  serialized_pb=_b('\n\x10\x65xperience.proto\"1\n\x0e\x45xperienceList\x12\x1f\n\nexperience\x18\x01 \x03(\x0b\x32\x0b.Experience\"l\n\nExperience\x12\r\n\x05state\x18\x01 \x03(\x01\x12\x0e\n\x06\x61\x63tion\x18\x02 \x01(\x05\x12\x0e\n\x06reward\x18\x03 \x01(\x01\x12\x11\n\tnew_state\x18\x04 \x03(\x01\x12\x0c\n\x04\x64one\x18\x05 \x01(\x08\x12\x0e\n\x06is_won\x18\x06 \x01(\x08')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 
+
+
+_EXPERIENCELIST = _descriptor.Descriptor(
+  name='ExperienceList',
+  full_name='ExperienceList',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='experience', full_name='ExperienceList.experience', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=20,
+  serialized_end=69,
+)
 
 
 _EXPERIENCE = _descriptor.Descriptor(
@@ -85,11 +115,20 @@ _EXPERIENCE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=20,
-  serialized_end=128,
+  serialized_start=71,
+  serialized_end=179,
 )
 
+_EXPERIENCELIST.fields_by_name['experience'].message_type = _EXPERIENCE
+DESCRIPTOR.message_types_by_name['ExperienceList'] = _EXPERIENCELIST
 DESCRIPTOR.message_types_by_name['Experience'] = _EXPERIENCE
+
+ExperienceList = _reflection.GeneratedProtocolMessageType('ExperienceList', (_message.Message,), dict(
+  DESCRIPTOR = _EXPERIENCELIST,
+  __module__ = 'experience_pb2'
+  # @@protoc_insertion_point(class_scope:ExperienceList)
+  ))
+_sym_db.RegisterMessage(ExperienceList)
 
 Experience = _reflection.GeneratedProtocolMessageType('Experience', (_message.Message,), dict(
   DESCRIPTOR = _EXPERIENCE,
