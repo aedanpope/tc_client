@@ -1,5 +1,6 @@
 
 from map import Map
+from logging import log
 
 # MOVES = [(6,0), (-6,0), (0,6), (0,-6), (4,4), (4,-4), (-4,4), (-4,-4)]
 MOVES = [(6,0), (-6,0), (0,6), (0,-6)]
@@ -155,8 +156,8 @@ def battle_to_input(battle):
   if f0.id != f1.id or e0.id != e1.id:
     raise Exception("Units in adjoind frames must have the same IDs, we assume one unit.")
 
-  if V_PER_FRAME: print "f1 = " + str(f1)
-  if V_PER_FRAME: print "e1 = " + str(e1)
+  log(50, "f1 = " + str(f1))
+  log(50, "e1 = " + str(e1))
 
   return ([Bot.norm(battle.size(), ([0,64]))] +
           Bot.unit_to_vector(f0, True) + Bot.unit_to_vector(f1, True) +

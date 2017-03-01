@@ -1,5 +1,8 @@
 ### USAGE:
+# Run some experiment with trials:
 # p exercise.py -s 1 -k 2 -t 3 -hp "greedy={'ACTION_STRATEGY':Act.Greed}, boltzmann={'ACTION_STRATEGY':Act.Boltzmann}" -f results/dnq_action_strategy_10k20k.txt
+# Quick run forever:
+# p exercise.py -s 1 -k 2 -t 1 -hp "foo={'PRE_TRAIN_STEPS':100, 'ANNEALING_STEPS':1000}" -v
 
 import time
 import tc_client
@@ -13,12 +16,12 @@ import advantage_bot
 from dnq_bot import Settings
 from dnq_bot import Mode
 from map import Map
+import logging
+from logging import log
 import dnq_bot
 from focus_fire_bot import FocusFireBot
 from scanner import Scanner
 import argparse
-
-V = False
 
 
 out_file = None
@@ -46,7 +49,7 @@ if __name__ == '__main__':
   speed = args.speed
 
   settings = Settings()
-  settings.verbosity = speed
+  logging.VERBOSITY = speed
   settings.mode = Mode.train
 
 
@@ -99,13 +102,6 @@ if __name__ == '__main__':
   update = tc.receive() # Get the first state so we can see our starting units.
   tc.send([])
 
-  # Make sure each Trial gets the same number of steps to train, not battles.
-  # So that sneaky agents don't get extra training time except an epsilon in the last training battle.
-  training_steps = dnq_bot.HP.PRE_TRAIN_STEPS + int(1.5*dnq_bot.HP.ANNEALING_STEPS)
-  if (args.forever):
-    training_steps = 99999999
-  test_battles = 100
-
   if args.out_file:
     out_file = open(args.out_file, 'a')
     print >>out_file, ""
@@ -135,6 +131,13 @@ if __name__ == '__main__':
 
     print "case: " + str(case)
     print "hyperparameters: " + str(hyperparameters)
+
+    # Make sure each Trial gets the same number of steps to train, not battles.
+    # So that sneaky agents don't get extra training time except an epsilon in the last training battle.
+    training_steps = dnq_bot.HP.PRE_TRAIN_STEPS + int(1.5*dnq_bot.HP.ANNEALING_STEPS)
+    if (args.forever):
+      training_steps = 99999999
+    test_battles = 100
 
     for trial in range(0,args.trials):
       bot = dnq_bot.Bot(hyperparameters)
@@ -188,7 +191,7 @@ if __name__ == '__main__':
             sc = Scanner(line)
             speed = sc.next_int()
             print "Setting speed to " + str(speed)
-            settings.verbosity = speed
+            logging.VERBOSITY = speed
             commands.append([tc_client.CMD.set_speed, speed])
             time.sleep(1)
 

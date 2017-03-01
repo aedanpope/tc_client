@@ -36,6 +36,8 @@ import math
 import agent
 from agent import Battle
 from agent import Stage
+from logging import log
+from logging import should_log
 
 Mode = Map(
     train = 0, # Explore and train the network.
@@ -43,13 +45,9 @@ Mode = Map(
 )
 
 class Settings:
-  # How noisy to print debug output. 0 = none, 30 = max
-  verbosity = None
   mode = Mode.train
   hyperparameters = None
 
-
-V_PER_FRAME = False  # Verbose
 
 FRAMES_PER_ACTION = 1
 
@@ -119,9 +117,6 @@ TF_WRITER = None
 
 ## Generally, try and keep everything in the [-1,1] range.
 ## TODO: consider trying [0,1] range for some stuff e.g. HP.
-
-def verbose(v=10):
-  return V_PER_FRAME or SETTINGS.verbosity >= v
 
 
 def parse_hyperparameter_sets(hyperparameter_sets_string):
@@ -331,12 +326,12 @@ class DNQNetwork:
     # end_multiplier sets Q(s1, a1) = 0 when there's no future (and then reward is not 0)
     target_q = train_batch.rewards() + (HP.FUTURE_Q_DISCOUNT * q_2_for_actions * end_multiplier)
 
-    if verbose():
+    if should_log():
       print ""
       print "TRAIN BATCH"
-      if verbose(30): print "states_2 = " + str(train_batch.states2())
-      if verbose(30):print "q_2 = " + str(q_2)
-      if verbose(30): print "states = " + str(train_batch.states())
+      if should_log(30): print "states_2 = " + str(train_batch.states2())
+      if should_log(30):print "q_2 = " + str(q_2)
+      if should_log(30): print "states = " + str(train_batch.states())
       print "q_2_for_actions = " + str(q_2_for_actions)
       print "end_multiplier = " + str(end_multiplier)
       print "actions = " + str(train_batch.actions())
@@ -384,7 +379,6 @@ class Bot:
   total_steps = None
 
   n = None
-  v = True # verbose
 
   battles = []
   current_battle = None
@@ -468,13 +462,13 @@ class Bot:
       self.total_steps += 1
 
       # Figure out what action to take next.
-      if verbose(): print "inp = " + str(stage.inp)
+      log("inp = " + str(stage.inp))
 
       agent_q = self.main_network.get_q_out([stage.inp])[0]
       # Best action, we'll use this if we aren't training/exploring.
       action = np.argmax(agent_q)
-      if verbose(): print "agent_q = " + str(agent_q)
-      if verbose(): print "best_action = " + str(action)
+      log("agent_q = " + str(agent_q))
+      log("best_action = " + str(action))
 
       if SETTINGS.mode == Mode.train:
         if self.total_steps <= HP.PRE_TRAIN_STEPS:
@@ -500,10 +494,10 @@ class Bot:
         # When explore, use random action.
         elif HP.ACTION_STRATEGY == Act.Greedy:
           if np.random.rand(1) < self.explore:
-            if verbose(): print "Explore!"
+            log("Explore!")
             action = np.random.randint(0, OUT_SHAPE)
           else:
-            if verbose(): print "Dont Explore."
+            log("Dont Explore.")
 
         else:
           raise Exception("Unknown action strategy")
@@ -512,7 +506,7 @@ class Bot:
           self.explore -= E_STEP
 
 
-      if verbose(): print "chosen_action = " + str(action)
+      log("chosen_action = " + str(action))
 
       stage.action = action
       commands += agent.output_to_command(action, game_state)
