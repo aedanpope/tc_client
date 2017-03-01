@@ -36,8 +36,8 @@ import math
 import agent
 from agent import Battle
 from agent import Stage
-from logging import log
-from logging import should_log
+from my_logging import log
+from my_logging import should_log
 
 Mode = Map(
     train = 0, # Explore and train the network.

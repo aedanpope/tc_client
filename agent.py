@@ -1,6 +1,6 @@
 
 from map import Map
-from logging import log
+from my_logging import log
 
 # MOVES = [(6,0), (-6,0), (0,6), (0,-6), (4,4), (4,-4), (-4,4), (-4,-4)]
 MOVES = [(6,0), (-6,0), (0,6), (0,-6)]
