@@ -36,6 +36,9 @@ if __name__ == '__main__':
       help='Number of trials to run for each config')
   parser.add_argument('-hp', '--hyperparameter_sets',
       help='Different sets of hyperparameters to evaluate num --trials times.')
+  parser.add_argument('-v', '--forever', default=False, action='store_true',
+      help='Run the first trial forever.')
+
 
   args = parser.parse_args()
 
@@ -99,6 +102,8 @@ if __name__ == '__main__':
   # Make sure each Trial gets the same number of steps to train, not battles.
   # So that sneaky agents don't get extra training time except an epsilon in the last training battle.
   training_steps = dnq_bot.HP.PRE_TRAIN_STEPS + int(1.5*dnq_bot.HP.ANNEALING_STEPS)
+  if (args.forever):
+    training_steps = 99999999
   test_battles = 100
 
   if args.out_file:
