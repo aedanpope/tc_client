@@ -102,5 +102,6 @@ To simplify the game state, we have modified the hit points and damage of the Vu
 A human winning the 4-kite exercise: https://www.youtube.com/watch?v=PnEhLxpL29U
 
 Our implementation:
-- [dnq_bot.py](dnq_bot.py)
+- [dnq_bot.py](dnq_bot.py): The DQN network implementation in TensorFlow.
 - [exercise.py](exercise.py): ```main()``` function to run multiple trials on multiple hyperparameter configurations, and interface between the agent and [tc_client.py](tc_client.py).
+- [agent.py](agent.py): Generic StarCraft micro-battle agent code for recording the game state and parameterising it.

@@ -1,0 +1,17 @@
+
+message Experience {
+
+  repeated double state = 1;
+
+  optional int32 action = 2;
+
+  optional double reward = 3;
+
+  repeated double new_state = 4;
+
+  // Is this state terminal? If so - new_state may be absent.
+  optional bool done = 5;
+
+  // Whether this experience is part of a battle we ultimately won.
+  optional bool is_won = 6;
+}
