@@ -473,23 +473,23 @@ class Bot:
           # Still pre-training, always random actions.
           action = np.random.randint(0, OUT_SHAPE)
 
-        elif Act.Boltzmann <= HP.ACTION_STRATEGY and HP.ACTION_STRATEGY <= Act.Boltzmann_C:
-          # Always use boltzman action.
-          if HP.ACTION_STRATEGY == Act.Boltzmann:
+        # Always use boltzman action.
+        elif HP.ACTION_STRATEGY == Act.Boltzmann:
             action = self.main_network.get_boltzmann_action(stage.inp)
 
-          # when explore, use boltzman action.
-          elif HP.ACTION_STRATEGY == Act.Boltzmann_B:
-            if np.random.rand(1) < self.explore:
-              action = self.main_network.get_boltzmann_action(stage.inp)
+        # When explore, use boltzman action.
+        elif HP.ACTION_STRATEGY == Act.Boltzmann_B:
+          if np.random.rand(1) < self.explore:
+            action = self.main_network.get_boltzmann_action(stage.inp)
 
-          # when explore, use random action - otherwise use boltzman action.
-          elif HP.ACTION_STRATEGY == Act.Boltzmann_C:
-            if np.random.rand(1) < self.explore:
-              action = np.random.randint(0, OUT_SHAPE)
-            else:
-              action = self.main_network.get_boltzmann_action(stage.inp)
+        # When explore, use random action - otherwise use boltzman action.
+        elif HP.ACTION_STRATEGY == Act.Boltzmann_C:
+          if np.random.rand(1) < self.explore:
+            action = np.random.randint(0, OUT_SHAPE)
+          else:
+            action = self.main_network.get_boltzmann_action(stage.inp)
 
+        # When explore, use random action.
         elif HP.ACTION_STRATEGY == Act.Greedy:
           if np.random.rand(1) < self.explore:
             if verbose(): print "Explore!"

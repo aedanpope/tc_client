@@ -6,7 +6,7 @@
 - [StarCraft](https://en.wikipedia.org/wiki/StarCraft_(video_game)): A 1998 Real-Time strategy game. Used in lots of AI research, and also has a [strong professional competetive following](https://en.wikipedia.org/wiki/Professional_StarCraft_competition) in Korea worth ~millions of USD.
 - [Brood War](https://en.wikipedia.org/wiki/StarCraft:_Brood_War): The expansion pack for StarCraft.
 
-All current professional competition and research uses StarCraft: Brood War.
+All professional competition and research with StarCraft these days uses the Brood War expansion.
 
 #### AI Research with starcraft:
 Recent examples:
