@@ -46,6 +46,8 @@ if __name__ == '__main__':
       help='Run the first trial forever.')
   parser.add_argument('--record',
       help='Record random experiences to this filename.')
+  parser.add_argument('--experience',
+      help='Filename containing experience to pre-fill the buffer with.')
 
 
   args = parser.parse_args()
@@ -150,8 +152,7 @@ if __name__ == '__main__':
         bot = experience.ExperienceRecordingBot(args.record)
       else:
         print "dnq_bot.Bot"
-        bot = dnq_bot.Bot(hyperparameters)
-
+        bot = dnq_bot.Bot(hyperparameters, args.experience)
 
       settings.mode = Mode.train
       steps = 0

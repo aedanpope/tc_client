@@ -5,6 +5,9 @@ import random
 import agent
 import numpy as np
 
+
+
+
 class ExperienceTable:
 
   # Nx5 array
@@ -33,10 +36,28 @@ class ExperienceBuffer():
   lose_buffer = None
   buffer_size = None
 
-  def __init__(self, buffer_size=sys.maxint):
+  def __init__(self, buffer_size=sys.maxint, init_file_path=None):
+    """
+    Args:
+      init_file_path: If specified, initialize the experience buffer with the data in this file.
+    """
     self.win_buffer = []
     self.lose_buffer = []
     self.buffer_size = buffer_size
+
+    if init_file_path:
+      experience_list = experience_pb2.ExperienceList()
+      f = open(init_file_path, "rb")
+      experience_list.ParseFromString(f.read())
+      f.close()
+      for exp_proto in experience_list.experience:
+        self.append(exp_proto.state,
+                    exp_proto.action,
+                    exp_proto.reward,
+                    exp_proto.new_state,
+                    exp_proto.done,
+                    exp_proto.is_won)
+
 
   def append(self, state, action, reward, new_state, done, is_won):
     row = [state, action, reward, new_state, done]
@@ -49,7 +70,7 @@ class ExperienceBuffer():
       buf = self.lose_buffer
 
     buf.append(row)
-    # MAybe slow, consider using a boolean mask to change in-place
+    # Maybe slow, consider using a boolean mask to change in-place
     # numpy.delete(self.buffer, (0), axis=0)
     if len(buf) >= self.buffer_size:
       buf.pop(0)

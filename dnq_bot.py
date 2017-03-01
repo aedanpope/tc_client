@@ -328,7 +328,12 @@ class Bot:
   frame = None
   war = None
 
-  def __init__(self, hyperparameters=None):
+  def __init__(self, hyperparameters=None, init_file_path=None):
+    """
+    Args:
+      hyperparameters: Values of hyperparameters to use for this bot.
+      init_file_path: If specified, initialize the experience buffer with the data in this file.
+    """
     # Set hyperparams in the global vars in this file.
     # TODO: make these instance vars so we can run multiple bots simultaneously.
     process_hyperparameters(hyperparameters)
@@ -347,7 +352,7 @@ class Bot:
     SESS.run(tf.global_variables_initializer())
     # Init the target network to be equal to the primary network.
     self.target_network.update_from_main_graph(self.main_network)
-    self.experience_buffer = ExperienceBuffer()
+    self.experience_buffer = ExperienceBuffer(HP.BUFFER_SIZE, init_file_path)
 
     self.total_reward = 0
     self.total_reward_p = 0
