@@ -33,20 +33,26 @@ import tensorflow.contrib.slim as slim
 import random
 import itertools
 import math
-from agent import Mode
+import agent
 from agent import Battle
 from agent import Stage
+
+Mode = Map(
+    train = 0, # Explore and train the network.
+    test = 1, # Test the current optimal performance of the network.
+)
+
+class Settings:
+  # How noisy to print debug output. 0 = none, 30 = max
+  verbosity = None
+  mode = Mode.train
+  hyperparameters = None
+
 
 V_PER_FRAME = False  # Verbose
 
 FRAMES_PER_ACTION = 1
 
-# MOVES = [(6,0), (-6,0), (0,6), (0,-6), (4,4), (4,-4), (-4,4), (-4,-4)]
-MOVES = [(6,0), (-6,0), (0,6), (0,-6)]
-# MOVES = [(10,0), (-10,0), (0,10), (0,-10), (7,7), (7,-7), (-7,7), (-7,-7)]
-# friendly starts at (70,140), enemy starts at (100,140)
-X_MOVE_RANGE = (60,120) # X_MOVE_RANGE and Y_MOVE_RANGE should be the same magnitude.
-Y_MOVE_RANGE = (110,190)
 MAX_FRIENDLY_LIFE = None
 MAX_ENEMY_LIFE = None
 
@@ -57,7 +63,9 @@ MAX_FRIENDLY_UNITS = 1 # 5 for marines
 MAX_ENEMY_UNITS = 1 # 5 for marines
 EXTRA = 1
 INP_SHAPE = EXTRA + MAX_FRIENDLY_UNITS * FRIENDLY_TENSOR_SIZE + MAX_ENEMY_UNITS * ENEMY_TENSOR_SIZE
-OUT_SHAPE = 5 + MAX_ENEMY_UNITS
+
+
+OUT_SHAPE = 1 + len(agent.MOVES) + MAX_ENEMY_UNITS
 
 
 Act = Map(
@@ -454,7 +462,7 @@ class Bot:
 
     stage = Stage(game_state)
     self.update_battle(stage)
-    stage.inp = Bot.battle_to_input(self.current_battle)
+    stage.inp = agent.battle_to_input(self.current_battle)
 
     if not self.current_battle.is_end:
       self.total_steps += 1
@@ -507,7 +515,7 @@ class Bot:
       if verbose(): print "chosen_action = " + str(action)
 
       stage.action = action
-      commands += Bot.output_to_command(action, game_state)
+      commands += agent.output_to_command(action, game_state)
 
 
     if self.current_battle.is_end and not self.current_battle.trained:
@@ -589,111 +597,5 @@ class Bot:
     for i in range(0, battle.size()-1):
       # def append(self, state, action, reward, new_state, done):
       buffer.append(battle[i].inp, battle[i].action, rewards[i], battle[i+1].inp,i == battle.size()-2, battle.is_won)
-
-
-  @staticmethod
-  def output_to_command(action, state):
-    """ out_t = [14] """
-    """ action in [0 .. 13]"""
-    commands = []
-
-    if not state.friendly_units or not state.enemy_units: return commands
-
-    friendly = state.friendly_units.values()[0]
-    enemy = state.enemy_units.values()[0]
-
-
-    # 0 = do nothing
-    # 1-8 = move 5 units in dir
-    # 9-13 = attack unit num 0-4
-    a = action
-    if a < 0 or len(MOVES)+1 < a:
-      raise Exception("Invalid action: " + str(a))
-
-    if a == 0: return commands # 0 means keep doing what you were doing before.
-    # Consider simplifying this to just run away from the enemy... So we only have 2 actions.
-    elif 1 <= a and a <= len(MOVES):
-      del_x, del_y = MOVES[a-1]
-      move_x = Bot.constrain(friendly.x + del_x, X_MOVE_RANGE)
-      move_y = Bot.constrain(friendly.y + del_y, Y_MOVE_RANGE)
-      commands.append([friendly.id, tc_client.UNIT_CMD.Move, -1, move_x, move_y])
-    elif a == len(MOVES)+1:
-      commands.append([friendly.id, tc_client.UNIT_CMD.Attack_Unit, enemy.id])
-    else:
-      raise Exception("Failed to grok action: " + str(a))
-
-    return commands
-
-
-  @staticmethod
-  def battle_to_input(battle):
-    if battle.size() == 0:
-      raise Exception("No input without at least 1 battle frames")
-    if battle.is_end:
-      return np.zeros(INP_SHAPE) # This state should never be used for training, because the prev action has done=true.
-      # raise Exception("No input from last battle frame")
-
-    # So there should always be both a friendly+enemy unit in the last 2 stages.
-
-    i0 = -2
-    i1 = -1
-    if battle.size() == 1:
-      i0 = -1 # Just use the first frame for both, so there's no movement.
-
-    f0 = battle[i0].friendly_unit
-    f1 = battle[i1].friendly_unit
-    e0 = battle[i0].enemy_unit
-    e1 = battle[i1].enemy_unit
-    if f0.id != f1.id or e0.id != e1.id:
-      raise Exception("Units in adjoind frames must have the same IDs, we assume one unit.")
-
-    if V_PER_FRAME: print "f1 = " + str(f1)
-    if V_PER_FRAME: print "e1 = " + str(e1)
-
-    return ([Bot.norm(battle.size(), ([0,64]))] +
-            Bot.unit_to_vector(f0, True) + Bot.unit_to_vector(f1, True) +
-            Bot.unit_to_vector(e0, False) + Bot.unit_to_vector(e1, False))
-
-
-  @staticmethod
-  def unit_to_vector(unit, is_friendly):
-    unit_vector = [
-            # 1.0 if is_friendly else -1.0,
-            Bot.norm(unit.x, (X_MOVE_RANGE)),
-            Bot.norm(unit.y, (Y_MOVE_RANGE)),
-            float(unit.get_life()) / unit.get_max_life(),
-            float(unit.groundCD) / unit.maxCD
-            ]
-
-    if is_friendly:
-      # Then we add the Order we're currently giving it. Simulate that we can't see the order for enemies.
-
-      is_guard = False
-      is_move = False
-      is_attack = False
-      # Seee https://bwapi.github.io/namespace_b_w_a_p_i_1_1_orders_1_1_enum.html
-      if len(unit.orders) > 0:
-        order_type = unit.orders[0].type
-        is_guard = order_type in [2,3] #
-        is_move = order_type == 6  #
-        is_attack = order_type == 10 #
-      unit_vector = unit_vector + [int(is_guard), int(is_move), int(is_attack)]
-      # unit_vector = unit_vector + [int(is_guard), int(is_move), int(is_attack)]
-
-    return unit_vector
-
-
-  @staticmethod
-  def norm(x, min_max):
-    # Map to range [-1.0,1.0]
-    # return (2.0*(x - min_max[0]) / (min_max[1] - min_max[0])) - 1
-    # Map to range [0,1.0]
-    return (float(x) - min_max[0]) / (min_max[1] - min_max[0])
-
-
-  @staticmethod
-  def constrain(x, min_max):
-    # truncate X to fit in [x_min,x_max]
-    return min(max(x,min_max[0]),min_max[1])
 
 

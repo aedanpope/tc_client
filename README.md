@@ -8,7 +8,7 @@
 
 All professional competition and research with StarCraft these days uses the Brood War expansion.
 
-#### AI Research with starcraft:
+#### AI research with StarCraft:
 Recent examples:
 - [Usunier et al, 2016](https://arxiv.org/abs/1609.02993), Episodic Exploration for Deep Deterministic Policies:
 An Application to StarCraft Micromanagement Tasks
@@ -42,13 +42,13 @@ TensorFlow is maintained by Google's Brain team. TensorFlow left Beta and V1  wa
 The main advantage of TorchCraft is that one can build a StarCraft agent in a Unix environment.
 
 
-## This Project
+## This project
 
 1. A Python client for the BWAPI server from TorchCraft.
 2. Examples of StarCraft agents implemented using the TensorFlow python libraries.
 3. A Deep Q-network to learn the ["kiting"](http://wiki.teamliquid.net/starcraft2/Kiting) mechanic in StarCraft.
 
-### Python Client for BWAPI
+### 1. Python Client for BWAPI
 
 Why? So that we can use the very nice TensorFlow python api in a native Unix environment for building StarCraft AIs.
 
@@ -58,7 +58,7 @@ We've written a python client for the TorchCraft C++ server:
 - [state.py](state.py) is responsible for parsing the responses from the server and turning them into typed obejects.
 
 
-### TensorFlow Examples
+### 2. StarCraft TensorFlow agent examples
 
 The existing best-class environment for StarCraft research is TorchCraft (used in [[1](https://arxiv.org/abs/1609.02993), [2](https://arxiv.org/abs/1702.08887)]).
 
@@ -66,7 +66,7 @@ TensorFlow support for BWAPI makes writing machine learning agents accessible to
 
 For example, [Juliani's Q-Learing Part 0 blog post](https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-0-q-learning-with-tables-and-neural-networks-d195264329d0#.icolg93n8) cointains sample TensorFlow code for a simple Q-network, which we've implemented to control a starcraft agent in [bot_q_learner_simple_a.py](bot_q_learner_simple_a.py) (the relevant TensorFlow code is [here](https://github.com/aedanpope/tc_client/blob/728ac6b889b1aa702ecea65a7a49bdb99d2625cd/bot_q_learner_simple_a.py#L127)).
 
-### A DQN for Kiting
+### 3. A DQN for kiting
 
 #### Intro
 Recent AI research using Q-networks has looked primarily at symmetrical battles of groups of Marines. In particular, Marine 5v5 where the opponent just singly attack-moves the AI controlled 5 marines was studied in [Usunier et al, 2016](https://arxiv.org/abs/1609.02993) and [Foerster et al, 2017](https://arxiv.org/abs/1702.08887).
@@ -93,7 +93,7 @@ In this project we consider the Kiting problem as a exercise to:
 - Demonstrating the usefulness of the TensorFlow integration into BWAPI.
 - See if a relatively generic Deep Q-learning network can solve the kiting problem (that is, a network largely like that described in [(Lillicrap and Hunt, 2016)](https://arxiv.org/pdf/1509.02971.pdf))
 
-#### Kiting Environemt
+#### Kiting environemt
 
 Our environment consits of a 1v1 battle between a Vulture and a Zealot.
 

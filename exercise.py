@@ -10,8 +10,8 @@ import tf_bot
 import bot_q_learner_simple_a
 import policy_bot
 import advantage_bot
-from agent import Settings
-from agent import Mode
+from dnq_bot import Settings
+from dnq_bot import Mode
 from map import Map
 import dnq_bot
 from focus_fire_bot import FocusFireBot
