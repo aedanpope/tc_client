@@ -48,12 +48,16 @@ The main advantage of TorchCraft is that one can build a StarCraft agent in a Un
 2. Examples of StarCraft agents implemented using the TensorFlow python libraries.
 3. A Deep Q-network to learn the ["kiting"](http://wiki.teamliquid.net/starcraft2/Kiting) mechanic in StarCraft.
 
-### StarCraft and TensorFlow
+### StarCraft and TensorFlow client.
+
+The current best-class environment for StarCraft research is TorchCraft (used in [[1](https://arxiv.org/abs/1609.02993), [2](https://arxiv.org/abs/1702.08887)).
 
 TensorFlow support for BWAPI makes writing machine learning agents more accessible, and is a solid long-term investment as TensorFlow grows in popularity and functionality.
 
 For example, one can easily implement StarCraft agents using the RL examples from this accessible blog series using this project:
 https://medium.com/@awjuliani/simple-reinforcement-learning-with-tensorflow-part-4-deep-q-networks-and-beyond-8438a3e2b8df
+
+In this project we have written a Python Client for
 
 ### A DQN for Kiting
 
@@ -62,14 +66,13 @@ Recent AI research using Q-networks has looked primarily at symmetrical battles 
 
 This is a good environment for exploring the multi-agent problem, and extending models to the stochasitc high-dimensional StarCraft space.
 
-There are many challenges to StarCraft that this environment does not explose us to:
-- In (Foerster, 2017), they measure that giving _no_ orders to the friendly controlled marines leads to a win rate of 84%.
-- One of the interesting AI challenges of StarCraft is the asymmetry in micro battles and races. There are 3 distint races with very different units and technologies available, leading to 9 different roles a completely general StarCraft AI has to learn (i.e. controlling {Terran, Zerg, Protos} vs enemy {Terran, Zerg, Protoss} are 9 distinct problems to solve with many common features).
+There are many challenges to StarCraft that this environment does not expose us to:
+- Exploration complexity: In (Foerster, 2017), they measure that giving _no_ orders to the friendly controlled marines leads to a win rate of 84%, this means that learning agents have somewhere decent to iteratively learn and improve from.
+- Asymmetry: One of the interesting AI challenges of StarCraft is the asymmetry in micro battles and races. There are 3 distint races with very different units and technologies available, leading to 9 different roles a completely general StarCraft AI has to learn (i.e. controlling {Terran, Zerg, Protos} vs enemy {Terran, Zerg, Protoss} are 9 distinct problems to solve with many common features).
 
-An example of a micro battle that is both:
+A kiting micro battle is one that is both:
 - hard to win randomly
 - asymmetrical
-is one where kiting is necessary for victory.
 
 Consider a battle a [Terran Vulture](http://wiki.teamliquid.net/starcraft/Vulture) and a [Protoss Zealot](http://wiki.teamliquid.net/starcraft/Zealot).
 
@@ -77,11 +80,11 @@ The vulture is a fast, fragile unit with a ranged attack. The Zealot is a strong
 
 In professional StarCraft, it is commonly accepted that Vultures beat Zealots - because expert players will [micro](http://wiki.teamliquid.net/starcraft2/Micro_(StarCraft)#Battle_micro) the vultures to hit the zealot once from range, then dance back before the zealot can attack and hit it again. This techniqe of "dancing back" is called [kiting](http://wiki.teamliquid.net/starcraft2/Kiting).
 
-There has been [some previous research](https://scholar.google.co.uk/scholar?hl=en&q=starcraft+kiting&btnG=&as_sdt=1%2C5&as_sdtp=) into kiting in StarCraft using machine learning. Notably (Szlam 2016)[https://arxiv.org/abs/1511.07401] where a generalized gaming agent was able to develope highly successful kiting strategies with reinforcement learning.
+There has been [some previous research](https://scholar.google.co.uk/scholar?hl=en&q=starcraft+kiting&btnG=&as_sdt=1%2C5&as_sdtp=) into kiting in StarCraft using machine learning. Notably [Szlam 2016](https://arxiv.org/abs/1511.07401) where a generalized gaming agent was able to develope highly successful kiting strategies with reinforcement learning.
 
 In this project we consider the Kiting problem as a exercise to:
 - Demonstrating the usefulness of the TensorFlow integration into BWAPI.
-- Seeing if the generic Deep Q-learning network described in [(Lillicrap and Hunt, 2016)](https://arxiv.org/pdf/1509.02971.pdf) can solve the kiting problem.
+- See if a relatively generic Deep Q-learning network can solve the kiting problem (that is, a network largely like that described in [(Lillicrap and Hunt, 2016)](https://arxiv.org/pdf/1509.02971.pdf))
 
 #### Kiting Environemt
 
