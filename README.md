@@ -52,21 +52,21 @@ The main advantage of TorchCraft is that one can build a StarCraft agent in a Un
 
 ### Python Client for BWAPI
 
-TorchCraft includes a [Lua client](https://github.com/TorchCraft/TorchCraft/blob/master/init.lua), with some backwards engineering we were able to create a Python Client for the TorchCraft server in [tc_client.py](tc_client.py)
+Why? So that we can use the very nice TensorFlow python api in a native Unix environment for building StarCraft AIs.
+
+We've written a python client for the TorchCraft C++ server:
+- Network IO is generally in [tc_client.py](tc_client.py).
+- The TorchCraft server returns the game-state as a Lua object string, which we transform into a python object string and ```eval()``` [here](https://github.com/aedanpope/tc_client/blob/427aafc9aa5dce7561325e74c64f4e8a13905e5e/tc_client.py#L254).
+- [state.py](state.py) is responsible for parsing the responses from the server and turning them into typed obejects.
 
 
 ### TensorFlow Examples
 
-StarCraft and TensorFlow client.
-
-The current best-class environment for StarCraft research is TorchCraft (used in [[1](https://arxiv.org/abs/1609.02993), [2](https://arxiv.org/abs/1702.08887)).
+The existing best-class environment for StarCraft research is TorchCraft (used in [[1](https://arxiv.org/abs/1609.02993), [2](https://arxiv.org/abs/1702.08887)]).
 
 TensorFlow support for BWAPI makes writing machine learning agents more accessible, and is a solid long-term investment as TensorFlow grows in popularity and functionality.
 
-For example, one can easily implement StarCraft agents using the RL examples from this accessible blog series using this project:
-https://medium.com/@awjuliani/simple-reinforcement-learning-with-tensorflow-part-4-deep-q-networks-and-beyond-8438a3e2b8df
-
-In this project we have written a Python Client for
+For example, [Juliani's Q-Learing Part 0 blog post](https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-0-q-learning-with-tables-and-neural-networks-d195264329d0#.icolg93n8) cointains sample TensorFlow code for a simple Q-network, which we've implemented to control a starcraft agent in [bot_q_learner_simple_a.py](bot_q_learner_simple_a.py) ([Relevant TensorFlow code here](https://github.com/aedanpope/tc_client/blob/728ac6b889b1aa702ecea65a7a49bdb99d2625cd/bot_q_learner_simple_a.py#L127).
 
 ### A DQN for Kiting
 
