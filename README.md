@@ -48,7 +48,14 @@ The main advantage of TorchCraft is that one can build a StarCraft agent in a Un
 2. Examples of StarCraft agents implemented using the TensorFlow python libraries.
 3. A Deep Q-network to learn the ["kiting"](http://wiki.teamliquid.net/starcraft2/Kiting) mechanic in StarCraft.
 
-### StarCraft and TensorFlow client.
+### Python Client for BWAPI
+
+TorchCraft includes a [Lua client](https://github.com/TorchCraft/TorchCraft/blob/master/init.lua).
+
+
+### TensorFlow Examples
+
+StarCraft and TensorFlow client.
 
 The current best-class environment for StarCraft research is TorchCraft (used in [[1](https://arxiv.org/abs/1609.02993), [2](https://arxiv.org/abs/1702.08887)).
 
@@ -70,15 +77,15 @@ There are many challenges to StarCraft that this environment does not expose us 
 - Exploration complexity: In (Foerster, 2017), they measure that giving _no_ orders to the friendly controlled marines leads to a win rate of 84%, this means that learning agents have somewhere decent to iteratively learn and improve from.
 - Asymmetry: One of the interesting AI challenges of StarCraft is the asymmetry in micro battles and races. There are 3 distint races with very different units and technologies available, leading to 9 different roles a completely general StarCraft AI has to learn (i.e. controlling {Terran, Zerg, Protos} vs enemy {Terran, Zerg, Protoss} are 9 distinct problems to solve with many common features).
 
-A kiting micro battle is one that is both:
-- hard to win randomly
-- asymmetrical
-
 Consider a battle a [Terran Vulture](http://wiki.teamliquid.net/starcraft/Vulture) and a [Protoss Zealot](http://wiki.teamliquid.net/starcraft/Zealot).
 
 The vulture is a fast, fragile unit with a ranged attack. The Zealot is a strong slow-moving unit with a melee attack. If a Vulture and a Zealot simply move directly to attack each other - the Zealot will win.
 
 In professional StarCraft, it is commonly accepted that Vultures beat Zealots - because expert players will [micro](http://wiki.teamliquid.net/starcraft2/Micro_(StarCraft)#Battle_micro) the vultures to hit the zealot once from range, then dance back before the zealot can attack and hit it again. This techniqe of "dancing back" is called [kiting](http://wiki.teamliquid.net/starcraft2/Kiting).
+
+A kiting micro battle is one that is both:
+- hard to win randomly
+- asymmetrical
 
 There has been [some previous research](https://scholar.google.co.uk/scholar?hl=en&q=starcraft+kiting&btnG=&as_sdt=1%2C5&as_sdtp=) into kiting in StarCraft using machine learning. Notably [Szlam 2016](https://arxiv.org/abs/1511.07401) where a generalized gaming agent was able to develope highly successful kiting strategies with reinforcement learning.
 
@@ -92,5 +99,5 @@ Our environment consits of a 1v1 battle between a Vulture and a Zealot.
 
 To simplify the game state, we have modified the hit points and damage of the Vulture and Zealot such that one attack from the Zealot kills the vulture, and the number of attacks for the Vulture to kill the zealot is a parameter "n-kite" where n is in [2,3,4]
 
-Here is a video of a human winning the 4-kite exercise: https://www.youtube.com/watch?v=PnEhLxpL29U
+A human winning the 4-kite exercise: https://www.youtube.com/watch?v=PnEhLxpL29U
 
