@@ -27,7 +27,7 @@ Torch is open-source, and maintained primarily by Facebook.
 
 #### TensorFlow
 
-[TensorFlow](https://www.tensorflow.org/) is an open-source library for machine learning like Torch, but has support in more languages (Python, C++, Java, GO) and more features (e.g. run on a mobile device.).
+[TensorFlow](https://www.tensorflow.org/) is an open-source library for machine learning like Torch, but has support in more languages (Python, C++, Java, GO) and more features (e.g. run on a mobile device, Google Cloud Platform).
 
 TensorFlow is maintained by Google's Brain team. TensorFlow left Beta and V1  was published on 15th of Feb, 2017 ([github](https://github.com/tensorflow/tensorflow/releases/tag/v1.0.0), (announcement video)[https://www.youtube.com/watch?v=mWl45NkFBOc])
 
@@ -101,3 +101,6 @@ To simplify the game state, we have modified the hit points and damage of the Vu
 
 A human winning the 4-kite exercise: https://www.youtube.com/watch?v=PnEhLxpL29U
 
+Our implementation:
+- [dnq_bot.py]()
+- [exercise.py](exercise.py): ```main()``` function to run multiple trials on multiple hyperparameter configurations, and interface between the agent and [tc_client.py](tc_client.py).
