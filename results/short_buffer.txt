@@ -1,0 +1,156 @@
+Theory:
+But from visual inspection, bot is close to a winning strategy but needs to tweak it.
+However, buffer size is so large that bot is always retraining older bad experiences.
+Maybe it can tweak the current strategy by retraining more recent losses first.
+20 steps in average battle, ~3k battles in a total training session.
+BUFFER_SIZE used to be 50k. Let's try BUFFER_SIZE = 1k to train with last ~100 battles.
+
+p exercise.py --speed=1 --kite=2 --trials=3 --experience=data/20000steps_28w_2518l.pb -hp \
+  " \
+  buf1k={'BUFFER_SIZE':1000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'ANNEALING_STEPS':10000, 'POST_ANNEALING_STEPS':5000}, \
+  buf5k={'BUFFER_SIZE':5000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'ANNEALING_STEPS':10000, 'POST_ANNEALING_STEPS':5000}, \
+  " \
+  --out_file=results/short_buffer.txt
+
+ buf10k={'BUFFER_SIZE':10000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'ANNEALING_STEPS':10000, 'POST_ANNEALING_STEPS':5000}, \
+ buf50k={'BUFFER_SIZE':50000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'ANNEALING_STEPS':10000, 'POST_ANNEALING_STEPS':5000}, \
+
+Command:
+exercise.py --speed=1 --kite=2 --trials=3 --experience=data/20000steps_28w_2518l.pb -hp    buf1k={'BUFFER_SIZE':1000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'ANNEALING_STEPS':10000, 'POST_ANNEALING_STEPS':5000},   buf5k={'BUFFER_SIZE':5000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'ANNEALING_STEPS':10000, 'POST_ANNEALING_STEPS':5000},    --out_file=results/short_buffer.txt
+default hyperparameters: {'TAU': 0.001, 'LEARNING_RATE': 0.01, 'START_E': 1, 'FUTURE_Q_DISCOUNT': 0.99, 'HID_2_SHAPE': 200, 'BATCH_SIZE': 100, 'ANNEALING_STEPS': 50000, 'POST_ANNEALING_STEPS': 10000, 'ACTION_STRATEGY': 1, 'BUFFER_SIZE': 50000, 'HID_1_SHAPE': 300, 'PRE_TRAIN_STEPS': 0, 'END_E': 0.05, 'UPDATE_FREQ': 4}
+case: buf1k
+hyperparameters: {'BUFFER_SIZE': 1000, 'ANNEALING_STEPS': 10000, 'POST_ANNEALING_STEPS': 5000, 'ACTION_STRATEGY': 2}
+trial 0
+train win rate: 0.034250764526
+test win rate: 0.148514851485
+trial 1
+train win rate: 0.0310344827586
+test win rate: 0.029702970297
+trial 2
+train win rate: 0.0330350997935
+test win rate: 0.00990099009901
+case: buf5k
+hyperparameters: {'BUFFER_SIZE': 5000, 'ANNEALING_STEPS': 10000, 'POST_ANNEALING_STEPS': 5000, 'ACTION_STRATEGY': 2}
+trial 0
+train win rate: 0.0380434782609
+test win rate: 0.0
+trial 1
+train win rate: 0.0147379912664
+test win rate: 0.019801980198
+trial 2
+train win rate: 0.00412293853073
+test win rate: 0.0
+
+p exercise.py --speed=1 --kite=2 --trials=5 --experience=data/20000steps_28w_2518l.pb -hp \
+  " \
+  annealing_0={'BUFFER_SIZE':1000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'ANNEALING_STEPS':0, 'POST_ANNEALING_STEPS':15000}, \
+  annealing_5k={'BUFFER_SIZE':1000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'ANNEALING_STEPS':5000, 'POST_ANNEALING_STEPS':10000}, \
+  startE_pt5={'BUFFER_SIZE':1000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'START_E': 0.5, 'ANNEALING_STEPS':10000, 'POST_ANNEALING_STEPS':5000}, \
+  startE_pt5_annealing_5k={'BUFFER_SIZE':1000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'START_E': 0.5, 'ANNEALING_STEPS':5000, 'POST_ANNEALING_STEPS':10000}, \
+  " \
+  --out_file=results/short_buffer.txt
+
+
+Command:
+exercise.py --speed=1 --kite=2 --trials=5 --experience=data/20000steps_28w_2518l.pb -hp    annealing_0={'BUFFER_SIZE':1000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'ANNEALING_STEPS':0, 'POST_ANNEALING_STEPS':15000},   annealing_5k={'BUFFER_SIZE':1000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'ANNEALING_STEPS':5000, 'POST_ANNEALING_STEPS':10000},   startE_pt5={'BUFFER_SIZE':1000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'START_E': 0.5, 'ANNEALING_STEPS':10000, 'POST_ANNEALING_STEPS':5000},   startE_pt5_annealing_5k={'BUFFER_SIZE':1000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'START_E': 0.5, 'ANNEALING_STEPS':5000, 'POST_ANNEALING_STEPS':10000},    --out_file=results/short_buffer.txt
+default hyperparameters: {'TAU': 0.001, 'LEARNING_RATE': 0.01, 'START_E': 1, 'FUTURE_Q_DISCOUNT': 0.99, 'HID_2_SHAPE': 200, 'BATCH_SIZE': 100, 'ANNEALING_STEPS': 50000, 'POST_ANNEALING_STEPS': 10000, 'ACTION_STRATEGY': 1, 'BUFFER_SIZE': 50000, 'HID_1_SHAPE': 300, 'PRE_TRAIN_STEPS': 0, 'END_E': 0.05, 'UPDATE_FREQ': 4}
+case: annealing_0
+hyperparameters: {'BUFFER_SIZE': 1000, 'ANNEALING_STEPS': 0, 'POST_ANNEALING_STEPS': 15000, 'ACTION_STRATEGY': 2}
+trial 0
+train win rate: 0.0246418338109
+test win rate: 0.039603960396
+trial 1
+train win rate: 0.0189873417722
+test win rate: 0.00990099009901
+trial 2
+train win rate: 0.024948024948
+test win rate: 0.0
+trial 3
+train win rate: 0.0285891858297
+test win rate: 0.376237623762
+trial 4
+train win rate: 0.0312075983718
+test win rate: 0.029702970297
+case: annealing_5k
+hyperparameters: {'BUFFER_SIZE': 1000, 'ANNEALING_STEPS': 5000, 'POST_ANNEALING_STEPS': 10000, 'ACTION_STRATEGY': 2}
+trial 0
+train win rate: 0.0288520564764
+test win rate: 0.019801980198
+trial 1
+train win rate: 0.0369104579631
+test win rate: 0.00990099009901
+trial 2
+train win rate: 0.0118993135011
+test win rate: 0.0
+trial 3
+train win rate: 0.0202140309156
+test win rate: 0.00990099009901
+trial 4
+train win rate: 0.0198070086338
+test win rate: 0.00990099009901
+case: startE_pt5_annealing_5k
+hyperparameters: {'BUFFER_SIZE': 1000, 'START_E': 0.5, 'ANNEALING_STEPS': 5000, 'POST_ANNEALING_STEPS': 10000, 'ACTION_STRATEGY': 2}
+trial 0
+train win rate: 0.0262151829601
+test win rate: 0.0594059405941
+trial 1
+train win rate: 0.0211817168339
+test win rate: 0.049504950495
+trial 2
+train win rate: 0.0130030959752
+test win rate: 0.00990099009901
+trial 3
+train win rate: 0.0400534045394
+test win rate: 0.0594059405941
+trial 4
+train win rate: 0.0477497255763
+test win rate: 0.0990099009901
+case: startE_pt5
+hyperparameters: {'BUFFER_SIZE': 1000, 'START_E': 0.5, 'ANNEALING_STEPS': 10000, 'POST_ANNEALING_STEPS': 5000, 'ACTION_STRATEGY': 2}
+trial 0
+train win rate: 0.00873138161274
+test win rate: 0.039603960396
+trial 1
+train win rate: 0.0210265924552
+test win rate: 0.0693069306931
+trial 2
+train win rate: 0.0184388444991
+test win rate: 0.0792079207921
+trial 3
+train win rate: 0.0223025919228
+test win rate: 0.019801980198
+trial 4
+train win rate: 0.024201853759
+test win rate: 0.0
+
+p exercise.py --speed=1 --kite=2 --trials=5 --experience=data/100000steps.pb -hp \
+  " \
+  annealing_0={'BUFFER_SIZE':5000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'ANNEALING_STEPS':0, 'POST_ANNEALING_STEPS':15000, 'UPDATE_FREQ':1, 'END_E':0.1}, \
+  " \
+  --out_file=results/short_buffer.txt
+
+Command:
+exercise.py --speed=1 --kite=2 --trials=5 --experience=data/100000steps.pb -hp    annealing_0={'BUFFER_SIZE':5000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'ANNEALING_STEPS':0, 'POST_ANNEALING_STEPS':15000, 'UPDATE_FREQ':1, 'END_E':0.1},    --out_file=results/short_buffer.txt
+default hyperparameters: {'TAU': 0.001, 'LEARNING_RATE': 0.01, 'START_E': 1, 'FUTURE_Q_DISCOUNT': 0.99, 'HID_2_SHAPE': 200, 'BATCH_SIZE': 100, 'ANNEALING_STEPS': 50000, 'POST_ANNEALING_STEPS': 10000, 'ACTION_STRATEGY': 1, 'BUFFER_SIZE': 50000, 'HID_1_SHAPE': 300, 'PRE_TRAIN_STEPS': 0, 'END_E': 0.05, 'UPDATE_FREQ': 4}
+case: annealing_0
+hyperparameters: {'ANNEALING_STEPS': 0, 'POST_ANNEALING_STEPS': 15000, 'ACTION_STRATEGY': 2, 'BUFFER_SIZE': 5000, 'END_E': 0.1, 'UPDATE_FREQ': 1}
+
+p exercise.py --speed=1 --kite=2 --trials=5 --experience=data/100000steps.pb -hp \
+  " \
+  annealing_0={'BUFFER_SIZE':5000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'ANNEALING_STEPS':0, 'POST_ANNEALING_STEPS':15000, 'UPDATE_FREQ':1, 'END_E':0.2, 'LEARNING_RATE':0.001, 'BATCH_SIZE':100}, \
+  " \
+  --out_file=results/short_buffer.txt
+
+# Configurable topology
+HID_1_SHAPE = 300,
+HID_2_SHAPE = 200,
+# Learning and env params:
+LEARNING_RATE = 0.01,
+TAU = 0.001, # Rate to update target network toward primary network
+
+
+Command:
+exercise.py --speed=1 --kite=2 --trials=5 --experience=data/100000steps.pb -hp    annealing_0={'BUFFER_SIZE':5000, 'ACTION_STRATEGY':Act.Boltzmann_B, 'ANNEALING_STEPS':0, 'POST_ANNEALING_STEPS':15000, 'UPDATE_FREQ':1, 'END_E':0.2, 'LEARNING_RATE':0.001, 'BATCH_SIZE':100},    --out_file=results/short_buffer.txt
+default hyperparameters: {'TAU': 0.001, 'LEARNING_RATE': 0.01, 'START_E': 1, 'FUTURE_Q_DISCOUNT': 0.99, 'HID_2_SHAPE': 200, 'BATCH_SIZE': 100, 'ANNEALING_STEPS': 50000, 'POST_ANNEALING_STEPS': 10000, 'ACTION_STRATEGY': 1, 'BUFFER_SIZE': 50000, 'HID_1_SHAPE': 300, 'PRE_TRAIN_STEPS': 0, 'END_E': 0.05, 'UPDATE_FREQ': 4}
+case: annealing_0
+hyperparameters: {'ANNEALING_STEPS': 0, 'BATCH_SIZE': 100, 'ACTION_STRATEGY': 2, 'BUFFER_SIZE': 5000, 'LEARNING_RATE': 0.001, 'UPDATE_FREQ': 1, 'END_E': 0.2, 'POST_ANNEALING_STEPS': 15000}

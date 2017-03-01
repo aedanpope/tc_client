@@ -1,0 +1,13 @@
+p exercise.py --speed=1 --kite=2 --trials=3 --experience=data/20000steps_28w_2518l.pb -hp \
+  "greedy={'ACTION_STRATEGY':Act.Greedy, 'PRE_TRAIN_STEPS':0, 'ANNEALING_STEPS':20000, 'POST_ANNEALING_STEPS':10000}, \
+  boltzmann={'ACTION_STRATEGY':Act.Boltzmann_B, 'PRE_TRAIN_STEPS':0, 'ANNEALING_STEPS':20000, 'POST_ANNEALING_STEPS':10000}" \
+  --out_file=results/greedy_boltzmann_2.txt
+
+Command:
+exercise.py --speed=1 --kite=2 --trials=3 --experience=data/20000steps_28w_2518l.pb -hp greedy={'ACTION_STRATEGY':Act.Greedy, 'PRE_TRAIN_STEPS':0, 'ANNEALING_STEPS':20000, 'POST_ANNEALING_STEPS':10000},   boltzmann={'ACTION_STRATEGY':Act.Boltzmann_B, 'PRE_TRAIN_STEPS':0, 'ANNEALING_STEPS':20000, 'POST_ANNEALING_STEPS':10000} --out_file=results/greedy_boltzmann_2.txt
+default hyperparameters: {'TAU': 0.001, 'LEARNING_RATE': 0.01, 'START_E': 1, 'FUTURE_Q_DISCOUNT': 0.99, 'HID_2_SHAPE': 200, 'BATCH_SIZE': 100, 'ANNEALING_STEPS': 50000, 'POST_ANNEALING_STEPS': 10000, 'ACTION_STRATEGY': 1, 'BUFFER_SIZE': 50000, 'HID_1_SHAPE': 300, 'PRE_TRAIN_STEPS': 10000, 'END_E': 0.05, 'UPDATE_FREQ': 4}
+case: boltzmann
+hyperparameters: {'ACTION_STRATEGY': 2, 'PRE_TRAIN_STEPS': 0, 'ANNEALING_STEPS': 20000, 'POST_ANNEALING_STEPS': 10000}
+trial 0
+train win rate: 0.0349521707138
+test win rate: 0.029702970297
