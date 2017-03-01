@@ -1,8 +1,15 @@
 ### USAGE:
 # Run some experiment with trials:
 # p exercise.py -s 1 -k 2 -t 3 -hp "greedy={'ACTION_STRATEGY':Act.Greed}, boltzmann={'ACTION_STRATEGY':Act.Boltzmann}" -f results/dnq_action_strategy_10k20k.txt
+#
 # Quick run forever:
 # p exercise.py -s 1 -k 2 -t 1 -hp "foo={'PRE_TRAIN_STEPS':100, 'ANNEALING_STEPS':1000}" -v
+#
+# Record experience
+# p exercise.py -s 1 -k 2 -t 1 -hp "foo={'PRE_TRAIN_STEPS':1000, 'ANNEALING_STEPS':0}" --test_battles=0  --record=data/1000steps.pb
+#
+# Run forever and read some existing experience.
+# p exercise.py -s 1 -k 2 -t 1 -hp "foo={'PRE_TRAIN_STEPS':100, 'ANNEALING_STEPS':1000}" -v --experience=data/1000steps.pb
 
 import time
 import tc_client
