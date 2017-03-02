@@ -1,6 +1,6 @@
 ### USAGE:
 # Run some experiment with trials:
-# p exercise.py -s 1 -k 2 -t 3 -hp "greedy={'ACTION_STRATEGY':Act.Greed}, boltzmann={'ACTION_STRATEGY':Act.Boltzmann}" -f results/dnq_action_strategy_10k20k.txt
+# p exercise.py -s 1 -k 2 -t 3 -hp "greedy={'ACTION_STRATEGY':Act.Greedy}, boltzmann={'ACTION_STRATEGY':Act.Boltzmann}" -f results/dnq_action_strategy_10k20k.txt
 #
 # Quick run forever:
 # p exercise.py -s 1 -k 2 -t 1 -hp "foo={'PRE_TRAIN_STEPS':100, 'ANNEALING_STEPS':1000}" -v
@@ -10,6 +10,13 @@
 #
 # Run forever and read some existing experience.
 # p exercise.py -s 1 -k 2 -t 1 -hp "foo={'PRE_TRAIN_STEPS':100, 'ANNEALING_STEPS':1000}" -v --experience=data/1000steps.pb
+#
+# Read existing experience and run exercise
+# p exercise.py -s 1 -k 2 --trials=3 -hp \
+# "greedy={'ACTION_STRATEGY':Act.Greedy, 'PRE_TRAIN_STEPS':0, 'ANNEALING_STEPS':20000}, \
+# boltzmann={'ACTION_STRATEGY':Act.Boltzmann_B, 'PRE_TRAIN_STEPS':0, 'ANNEALING_STEPS':20000}" \
+#  --experience=data/20000steps_28w_2518l.pb
+#  --out_file=results/2017_02_01_1822.txt
 
 import time
 import tc_client
@@ -133,9 +140,12 @@ if __name__ == '__main__':
     print >>out_file, "default hyperparameters: " + str(dnq_bot.HP)
   print "default hyperparameters: " + str(dnq_bot.HP)
 
+  first_keys = set(hyperparameter_sets.items()[0].keys())
   for (case,hyperparameters) in hyperparameter_sets.items():
     # Just check they all parse.
     dnq_bot.process_hyperparameters(hyperparameters)
+    if (first_keys != set(hyperparameters.keys())):
+      raise Exception("not all hyperparameter sets have the same keys. All keys must be specified so that order doesn't matter.")
 
   for (case,hyperparameters) in hyperparameter_sets.items():
     if out_file:
@@ -145,10 +155,12 @@ if __name__ == '__main__':
 
     print "case: " + str(case)
     print "hyperparameters: " + str(hyperparameters)
+    # Process now so they apply to num trainging steps.
+    dnq_bot.process_hyperparameters(hyperparameters)
 
     # Make sure each Trial gets the same number of steps to train, not battles.
     # So that sneaky agents don't get extra training time except an epsilon in the last training battle.
-    training_steps = dnq_bot.HP.PRE_TRAIN_STEPS + int(1.5*dnq_bot.HP.ANNEALING_STEPS)
+    training_steps = dnq_bot.HP.PRE_TRAIN_STEPS + dnq_bot.HP.ANNEALING_STEPS + dnq_bot.HP.POST_ANNEALING_STEPS
     if (args.forever):
       training_steps = 99999999
     test_battles = args.test_battles
@@ -167,7 +179,7 @@ if __name__ == '__main__':
       train_battles_won = 0
       test_battles_fought = 0
       test_battles_won = 0
-      while steps <= training_steps or test_battles_fought <= test_battles:
+      while steps < training_steps or test_battles_fought < test_battles:
         update = tc.receive()
         commands = []
 
@@ -205,14 +217,18 @@ if __name__ == '__main__':
 
         # http://stackoverflow.com/questions/3762881/how-do-i-check-if-stdin-has-some-data
         if select.select([sys.stdin,],[],[],0.0)[0]:
-            line = sys.stdin.readline()
-            print "Parsing User Input " + line + ""
+          line = sys.stdin.readline()
+          print "Parsing UserInput '" + line + "'"
+          try:
             sc = Scanner(line)
             speed = sc.next_int()
             print "Setting speed to " + str(speed)
             my_logging.VERBOSITY = speed
             commands.append([tc_client.CMD.set_speed, speed])
             time.sleep(1)
+          except Exception as ex:
+            print "Error parsing UserInput '" + line + "'"
+            print "ex: " + str(ex)
 
 
         log("commands = " + str(commands), 30)
@@ -223,7 +239,11 @@ if __name__ == '__main__':
       bot.close()
       print "trial " + str(trial)
       print "train win rate: " + str(float(train_battles_won) / train_battles_fought)
-      print "test win rate: " + str(float(test_battles_won) / test_battles_fought)
+      if test_battles_fought > 0:
+        print "test win rate: " + str(float(test_battles_won) / test_battles_fought)
+      else:
+        print "test win rate: NaN"
+
       print ""
       print ""
       print "**********************"
@@ -233,5 +253,8 @@ if __name__ == '__main__':
       if out_file:
         print >>out_file, "trial " + str(trial)
         print >>out_file, "train win rate: " + str(float(train_battles_won) / train_battles_fought)
-        print >>out_file, "test win rate: " + str(float(test_battles_won) / test_battles_fought)
+        if test_battles_fought > 0:
+          print >>out_file, "test win rate: " + str(float(test_battles_won) / test_battles_fought)
+      else:
+        print "test win rate: NaN"
         file.flush(out_file)

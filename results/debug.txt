@@ -1,0 +1,26 @@
+What? 15k != 5000 steps.
+
+Labels getting separated from hyperparameters perhaps?
+
+And 5k was 10000 steps.
+
+
+BATTLE ENDED
+
+case = steps_15k
+trial = 2
+train_battles_fought = 265
+train_battles_won = 24
+test_battles_fought = 0/100
+test_battles_won = 0
+settings.mode = 0
+steps = 3244/5000
+total_steps = 3244, PRE_TRAIN_STEPS = 0
+explore = 0.2
+win_buffer = 4259, lose_buffer = 4999
+total_reward = 265, total_reward_p = 265, total_reward_n = 0
+battle.size() = 14
+total_battles = 265
+total_wins = 24
+win_ratio = 0.0905660377358
+last_10 = 0 / 10

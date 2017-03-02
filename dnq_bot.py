@@ -93,12 +93,13 @@ UPDATE_FREQ = 4, # 4 #How often to perform a training step.
 
 # PRE_TRAIN_STEPS needs to be to be more than BATCH_SIZE
 # PRE_TRAIN_STEPS requires a lot so we have at least a few wins once we start learning.
-PRE_TRAIN_STEPS = 10000, # 10000#How many steps of random actions before training begins.
+PRE_TRAIN_STEPS = 0, # 10000#How many steps of random actions before training begins.
 ANNEALING_STEPS = 50000, # 10000#How many steps of training to reduce startE to endE.
+POST_ANNEALING_STEPS = 10000, # 10000#How many steps to train at END_E.
 )
 # Derived hyperparameters
 def E_STEP():
-  return (HP.START_E - HP.END_E)/HP.ANNEALING_STEPS
+  return (HP.START_E - HP.END_E)/(HP.ANNEALING_STEPS+1)
 
 
 # TF Session
@@ -116,6 +117,7 @@ def parse_hyperparameter_sets(hyperparameter_sets_string):
 
 def process_hyperparameters(hyperparameters):
   if not hyperparameters: return
+  print "set hyperparameters " + str(hyperparameters)
   for (param,val) in hyperparameters.items():
     if not param.isupper():
       raise Exception("All hyperparameters must be UPPER_CASE, bad hyperparameters: " + str(hyperparameters))
@@ -435,7 +437,8 @@ class Bot:
       # Calculate rewards, and add experiences to buffer.
       self.war.current_battle.trained = True
 
-      agent.write_battle_to_experience_buffer(self.war.current_battle, self.experience_buffer)
+      if SETTINGS.mode == Mode.train:
+        agent.write_battle_to_experience_buffer(self.war.current_battle, self.experience_buffer)
 
       reward = 1 if self.war.current_battle else -1
       self.total_reward += reward
@@ -459,7 +462,8 @@ class Bot:
     # See similar logic in exercise.py
     if (not self.war.current_battle.is_end and
         self.total_steps > HP.PRE_TRAIN_STEPS and
-        self.total_steps % (HP.UPDATE_FREQ) == 0):
+        self.total_steps % (HP.UPDATE_FREQ) == 0 and
+        SETTINGS.mode == Mode.train):
       # print "train WTF"
       DNQNetwork.train_batch(self.main_network, self.target_network, self.experience_buffer.sample(HP.BATCH_SIZE))
       # Set the target network to be equal to the primary network, with factor TAU = 0.001

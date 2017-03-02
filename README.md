@@ -76,6 +76,7 @@ This is a good environment for exploring the multi-agent problem, and extending 
 There are many challenges to StarCraft that this environment does not expose us to:
 - Exploration complexity: In (Foerster, 2017), they measure that giving _no_ orders to the friendly controlled marines leads to a win rate of 84%, this means that learning agents have somewhere decent to iteratively learn and improve from.
 - Asymmetry: One of the interesting AI challenges of StarCraft is the asymmetry in micro battles and races. There are 3 distint races with very different units and technologies available, leading to 9 different roles a completely general StarCraft AI has to learn (i.e. controlling {Terran, Zerg, Protos} vs enemy {Terran, Zerg, Protoss} are 9 distinct problems to solve with many common features).
+- No Planning: Short term gains are a close proxy for long term victory. Doing some extra damage to the opponent this frame is probably good. In full starcraft, it's common to make short term sacrifices to realise a longer term advantage.
 
 Consider a battle a [Terran Vulture](http://wiki.teamliquid.net/starcraft/Vulture) and a [Protoss Zealot](http://wiki.teamliquid.net/starcraft/Zealot).
 
@@ -83,9 +84,10 @@ The vulture is a fast, fragile unit with a ranged attack. The Zealot is a strong
 
 In professional StarCraft, it is commonly accepted that Vultures beat Zealots - because expert players will [micro](http://wiki.teamliquid.net/starcraft2/Micro_(StarCraft)#Battle_micro) the vultures to hit the zealot once from range, then dance back before the zealot can attack and hit it again. This techniqe of "dancing back" is called [kiting](http://wiki.teamliquid.net/starcraft2/Kiting).
 
-A kiting micro battle is one that is both:
+A kiting micro battle is:
 - hard to win randomly
 - asymmetrical
+- has a slightly longer planning horizion than marine vs marine
 
 There has been [some previous research](https://scholar.google.co.uk/scholar?hl=en&q=starcraft+kiting&btnG=&as_sdt=1%2C5&as_sdtp=) into kiting in StarCraft using machine learning. Notably [Szlam 2016](https://arxiv.org/abs/1511.07401) where a generalized gaming agent was able to develope highly successful kiting strategies with reinforcement learning.
 
