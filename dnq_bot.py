@@ -463,7 +463,8 @@ class Bot:
     if (not self.war.current_battle.is_end and
         self.total_steps > HP.PRE_TRAIN_STEPS and
         self.total_steps % (HP.UPDATE_FREQ) == 0 and
-        SETTINGS.mode == Mode.train):
+        SETTINGS.mode == Mode.train and
+        self.experience_buffer.enough_to_sample(HP.BATCH_SIZE)):
       # print "train WTF"
       DNQNetwork.train_batch(self.main_network, self.target_network, self.experience_buffer.sample(HP.BATCH_SIZE))
       # Set the target network to be equal to the primary network, with factor TAU = 0.001

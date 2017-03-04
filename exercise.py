@@ -140,7 +140,7 @@ if __name__ == '__main__':
     print >>out_file, "default hyperparameters: " + str(dnq_bot.HP)
   print "default hyperparameters: " + str(dnq_bot.HP)
 
-  first_keys = set(hyperparameter_sets.items()[0].keys())
+  first_keys = set(hyperparameter_sets.values()[0].keys())
   for (case,hyperparameters) in hyperparameter_sets.items():
     # Just check they all parse.
     dnq_bot.process_hyperparameters(hyperparameters)
@@ -179,6 +179,7 @@ if __name__ == '__main__':
       train_battles_won = 0
       test_battles_fought = 0
       test_battles_won = 0
+      input_test_battles = None
       while steps < training_steps or test_battles_fought < test_battles:
         update = tc.receive()
         commands = []
@@ -188,12 +189,24 @@ if __name__ == '__main__':
           print ""
 
           won = int(tc.state.battle_won)
+
           if (settings.mode == Mode.train):
             train_battles_fought += 1
             train_battles_won += won
           else:
             test_battles_fought += 1
             test_battles_won += won
+
+          if input_test_battles is not None:
+            input_test_battles -= 1
+            if input_test_battles == 0:
+              input_test_battles = None
+              print "\nInput Test Finished."
+              print "Results = " + str(test_battles_won) + "/" + str(test_battles_fought)
+              test_battles_fought = 0
+              test_battles_won = 0
+              time.sleep(10)
+              settings.mode = Mode.train
 
           if (steps >= training_steps):
             settings.mode = Mode.test
@@ -209,7 +222,7 @@ if __name__ == '__main__':
 
         # Don't send repeated frames of the same ended battle state.
         if not tc.state.battle_ended or tc.state.battle_just_ended:
-          if not tc.state.battle_ended:
+          if not tc.state.battle_ended and input_test_battles is None:
             steps += 1
           # Populate commands.
           unit_commands = bot.get_commands(tc.state, settings);
@@ -219,17 +232,23 @@ if __name__ == '__main__':
         if select.select([sys.stdin,],[],[],0.0)[0]:
           line = sys.stdin.readline()
           print "Parsing UserInput '" + line + "'"
-          try:
-            sc = Scanner(line)
+          sc = Scanner(line)
+          if sc.has_next_int():
             speed = sc.next_int()
             print "Setting speed to " + str(speed)
             my_logging.VERBOSITY = speed
             commands.append([tc_client.CMD.set_speed, speed])
-            time.sleep(1)
-          except Exception as ex:
-            print "Error parsing UserInput '" + line + "'"
-            print "ex: " + str(ex)
-
+          elif sc.has_next_word():
+            cmd = sc.next_word()
+            if cmd == "test" and sc.has_next_int():
+              input_test_battles = sc.next_int()
+              test_battles_fought = 0
+              test_battles_won = 0
+              settings.mode = Mode.test
+              print "Testing for " + str(input_test_battles) + " battles"
+            else:
+              print "Invalid UserInput"
+          time.sleep(1)
 
         log("commands = " + str(commands), 30)
 

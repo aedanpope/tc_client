@@ -75,6 +75,11 @@ class ExperienceBuffer():
     if len(buf) >= self.buffer_size:
       buf.pop(0)
 
+
+  def enough_to_sample(self, size):
+    return size/2 < len(self.win_buffer) and size/2 < len(self.lose_buffer)
+
+
   def sample(self, size):
     # return np.reshape(np.array(random.sample(self.buffer,size)),[size,5])
     wins = random.sample(self.win_buffer, min(size/2, len(self.win_buffer)))
@@ -83,6 +88,7 @@ class ExperienceBuffer():
     result.table = wins + losses
     random.shuffle(result.table)
     return result
+
 
   def all(self):
     return ExperienceTable(self.win_buffer + self.lose_buffer)
