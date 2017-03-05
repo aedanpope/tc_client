@@ -92,7 +92,7 @@ if __name__ == '__main__':
   # tc.initial_map = 'Maps/BroodWar/micro/kite_2hit.scm'
   tc.initial_map = "Maps/BroodWar/micro/kite_" + str(args.kite) + ".scm"
   # tc.initial_map = 'Maps/BroodWar/micro/Vulture_v_Zealot.scm'
-  tc.window_pos = [100, 100]
+  tc.window_pos = [0, 0]
   tc.window_size = [640, 480]
   tc.mode.micro_battles = True
   tc.mode.replay = False

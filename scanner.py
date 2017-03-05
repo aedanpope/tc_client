@@ -23,7 +23,8 @@ class Scanner:
   def next_char(self, advance=True):
     """ Consumes preceding whitespace. """
     self.consume_space()
-    self._assert_not_end()
+    if self.end():
+      return None
     c = self.str[self.offset]
     if advance:
       self.offset += 1
@@ -33,7 +34,8 @@ class Scanner:
   def next_word(self, advance=True):
     """ Consumes preceding whitespace. """
     self.consume_space()
-    self._assert_not_end()
+    if self.end():
+      return None
     return self.next_pattern(r"\w+", advance=advance)
 
 
@@ -48,7 +50,8 @@ class Scanner:
   def next_int(self, advance=True):
     """ Consumes preceding whitespace. """
     self.consume_space()
-    self._assert_not_end()
+    if self.end():
+      return None
     token = self.next_pattern(r"-?\d+", advance=advance)
     if token is None: return None
     return int(token)
@@ -71,8 +74,6 @@ class Scanner:
 
 
   def consume_space(self):
-    self._assert_not_end()
-
     while not self.end() and self.str[self.offset].isspace():
       self.offset += 1
 
