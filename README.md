@@ -69,14 +69,16 @@ For example, [Juliani's Q-Learing Part 0 blog post](https://medium.com/emergent-
 ### 3. A DQN for kiting
 
 #### Intro
-Recent AI research using Q-networks has looked primarily at symmetrical battles of groups of Marines. In particular, Marine 5v5 where the opponent just singly attack-moves the AI controlled 5 marines was studied in [Usunier et al, 2016](https://arxiv.org/abs/1609.02993) and [Foerster et al, 2017](https://arxiv.org/abs/1702.08887).
+Recent AI research using Q-networks for StarCraft micro has looked primarily at symmetrical battles of groups of Marines. In particular, Marine 5v5 where the opponent just attack-moves the AI controlled 5 marines was studied in [Usunier et al, 2016](https://arxiv.org/abs/1609.02993) and [Foerster et al, 2017](https://arxiv.org/abs/1702.08887).
 
 This is a good environment for exploring the multi-agent problem, and extending models to the stochasitc high-dimensional StarCraft space.
 
-There are many challenges to StarCraft that this environment does not expose us to:
-- Exploration complexity: In (Foerster, 2017), they measure that giving _no_ orders to the friendly controlled marines leads to a win rate of 84%, this means that learning agents have somewhere decent to iteratively learn and improve from.
-- Asymmetry: One of the interesting AI challenges of StarCraft is the asymmetry in micro battles and races. There are 3 distint races with very different units and technologies available, leading to 9 different roles a completely general StarCraft AI has to learn (i.e. controlling {Terran, Zerg, Protos} vs enemy {Terran, Zerg, Protoss} are 9 distinct problems to solve with many common features).
-- No Planning: Short term gains are a close proxy for long term victory. Doing some extra damage to the opponent this frame is probably good. In full starcraft, it's common to make short term sacrifices to realise a longer term advantage.
+There are many challenges to the StarCraft environment that marine 5v5 does not expose us to:
+- Exploration complexity: Foerster et al. measure that giving _no_ orders to the friendly controlled marines leads to a win rate of 84% (Foerster, 2017), this means that agents have a decent default policy to iteratively learn and improve from.
+- Asymmetry: One of the interesting AI challenges of StarCraft is the asymmetry in micro battles and races. There are 3 distint races with very different units and technologies available, leading to 9 different roles a completely general StarCraft AI has to learn (i.e. controlling {Terran, Zerg, Protos} vs enemy {Terran, Zerg, Protoss} is 9 distinct problems to solve with many common features).
+- Planning: In marine 5v5, short term gains are a close proxy for long term victory. Doing some extra damage to the opponent this frame is probably good. In StarCraft, it's common to either:
+  - Make short term sacrifices to realise a longer term advantage.
+  - Realise a short term advantage, without it being clear you've incurred a longer term disadvantage.
 
 Consider a battle a [Terran Vulture](http://wiki.teamliquid.net/starcraft/Vulture) and a [Protoss Zealot](http://wiki.teamliquid.net/starcraft/Zealot).
 
@@ -85,25 +87,59 @@ The vulture is a fast, fragile unit with a ranged attack. The Zealot is a strong
 In professional StarCraft, it is commonly accepted that Vultures beat Zealots - because expert players will [micro](http://wiki.teamliquid.net/starcraft2/Micro_(StarCraft)#Battle_micro) the vultures to hit the zealot once from range, then dance back before the zealot can attack and hit it again. This techniqe of "dancing back" is called [kiting](http://wiki.teamliquid.net/starcraft2/Kiting).
 
 A kiting micro battle is:
-- hard to win randomly
+- hard to win with null or random actions
 - asymmetrical
-- has a slightly longer planning horizion than marine vs marine
+- has a slightly longer planning horizion than Marine 5v5
 
 There has been [some previous research](https://scholar.google.co.uk/scholar?hl=en&q=starcraft+kiting&btnG=&as_sdt=1%2C5&as_sdtp=) into kiting in StarCraft using machine learning. Notably [Szlam 2016](https://arxiv.org/abs/1511.07401) where a generalized gaming agent was able to develope highly successful kiting strategies with reinforcement learning.
 
 In this project we consider the Kiting problem as a exercise to:
 - Demonstrating the usefulness of the TensorFlow integration into BWAPI.
-- See if a relatively generic Deep Q-learning network can solve the kiting problem (that is, a network largely like that described in [(Lillicrap and Hunt, 2016)](https://arxiv.org/pdf/1509.02971.pdf))
+- See if a generic Deep Q-learning network can solve the kiting problem (that is, a network largely like that described in [(Lillicrap and Hunt, 2016)](https://arxiv.org/pdf/1509.02971.pdf))
 
-#### Kiting environemt
 
-Our environment consits of a 1v1 battle between a Vulture and a Zealot.
+#### Environment and Parameterization
 
-To simplify the game state, we have modified the hit points and damage of the Vulture and Zealot such that one attack from the Zealot kills the vulture, and the number of attacks for the Vulture to kill the zealot is a parameter "n-kite" where n is in [2,3,4]
+Our environment consits of a simplified 1v1 battle between a Vulture and a Zealot.
 
-A human winning the 4-kite exercise: https://www.youtube.com/watch?v=PnEhLxpL29U
+- The hit points and damage of the units are modified such that the Zealot kills the Vulture in one attack, and the Vulture kills the Zealot in _n_ attacks - where _n_ is a parameter in {2,3,4}. For a particular _n_, we call the environment "_n_-kite". n is in [2,3,4]
 
-Our implementation:
+- Zealot commands: The enemy Zealot is ordered to attack directly at the Vulture.
+
+- Starting Positions: The two opposing units start close enough that if the Vulture also simply attacks the Zealot, the Zealot will reach it and attack at melee range after the Vulture fires one shot. The Vulture must move to survive and win the battle.
+
+A video of a human winning the 4-kite exercise: https://www.youtube.com/watch?v=PnEhLxpL29U
+
+
+#### Parameterization
+
+-
+
+
+#### Algorithm
+
+#### Implementation
+
+
 - [dnq_bot.py](dnq_bot.py): The DQN network implementation in TensorFlow.
 - [exercise.py](exercise.py): ```main()``` function to run multiple trials on multiple hyperparameter configurations, and interface between the agent and [tc_client.py](tc_client.py).
 - [agent.py](agent.py): Generic StarCraft micro-battle agent code for recording the game state and parameterising it.
+
+
+
+#### Results
+
+Hyperparameters
+- Each timestep for the agent consists of 5 frames of the game.
+
+
+https://www.youtube.com/watch?v=UHgK2RxLCKM
+
+
+#### Future Work
+
+
+#### References
+
+Mnih et al. 2015, Human-level control through deep reinforcement learning, http://www.nature.com/nature/journal/v518/n7540/full/nature14236.html
+
