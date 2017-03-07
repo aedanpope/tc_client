@@ -196,23 +196,22 @@ Initialize target action-value function Q_2 with random weights θ_2
 For battle 1, ... do
   Initialise battle buffer E
   while battle_not_over do
-    read state _s_ from battle
+    read state s from battle
     if (battle < K)
       select random action a
     else
       with probability ε select a = "best boltzmann action"
       otherwise select a = argmax_a_i Q(s, a_i, θ)
     execution a
-    read state s_1 from battle
-    set _r_ to 1 if battle is won, -1 if lost, 0 otherwise.
-    store transition (s, a, r, s_1) in E
+    read state s1 from battle
+    set r to 1 if battle is won, -1 if lost, 0 otherwise.
+    store transition (s, a, r, s1) in E
     set B = T/2 random samples each from W and L
     For each experience (s, a, r, s1) in B
-      set a1 = argmax_a_i Q(s_1, a_i, θ)
-      set q1 = Q(s1, a1, θ_2)
+      set a1 = argmax_a_i Q(s1, a_i, θ)
+      set q1 = Q_2(s1, a1, θ_2)
       set y = r + γ * q1
-      perform AdamOptimizer
-      Update θ for loss (y - Q(s, a, θ))^2 with learning rate λ using Adam gradient-descent algorithm ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)) ([tensorflow](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer))
+      Update θ for loss (y - Q(s, a, θ))^2 with learning rate λ using Adam gradient-descent algorithm
       Set θ_2 = τ*θ + (1-τ)*θ_2
   End For
   if battle was won
@@ -227,6 +226,7 @@ Hyperparameters
 | T   | training batch size | 100 |
 |---- | ------------------- | --- |
 | T   | training batch size | 100 |
+| λ | learning rate | 0.01 |
 
 | --- | --- | --- |
 | T | training batch size | 100 |
@@ -237,6 +237,8 @@ Hyperparameters
 | ε | exploration rate (see below) | 0.2 |
 | γ | future reward discount | 0.99 |
 | τ | target network update rate | 0.001 |
+
+We use the Adam gradient-descent algorithm from ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)). Also see [tensorflow](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer).
 
 Markdown | Less | Pretty
 --- | --- | ---
@@ -298,4 +300,5 @@ Usunier, Synnaeve, Lin, and Chintala. _Episodic Exploration for Deep Determinist
 
 Sukhbaatar, Szlam, Synnaeve, Chintala, and Fergus. _MazeBase: A Sandbox for Learning from Games_. arXiv preprint [arXiv:1511.07401](https://arxiv.org/abs/1511.07401), 2016.
 
+([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)) ([tensorflow](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer))
 
