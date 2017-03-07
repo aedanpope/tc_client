@@ -1,31 +1,28 @@
 
 # TensorFlow and StarCraft
 
-Table of Contents
-=================
-
-   * [TensorFlow and StarCraft](#tensorflow-and-starcraft)
-   * [Table of Contents](#table-of-contents)
-      * [Background](#background)
-            * [StarCraft](#starcraft)
-            * [AI research with StarCraft](#ai-research-with-starcraft)
-            * [BWAPI](#bwapi)
-            * [Torch](#torch)
-            * [TensorFlow](#tensorflow)
-            * [TorchCraft](#torchcraft)
-      * [This project](#this-project)
-         * [1. Python Client for BWAPI](#1-python-client-for-bwapi)
-         * [2. StarCraft TensorFlow agent examples](#2-starcraft-tensorflow-agent-examples)
-         * [3. A DQN for solving a difficult binary-success problem in StarCraft (that is, a DQN for a kiting micro-battle).](#3-a-dqn-for-solving-a-difficult-binary-success-problem-in-starcraft-that-is-a-dqn-for-a-kiting-micro-battle)
-            * [Abstract](#abstract)
-            * [Intro](#intro)
-            * [Environment and Parameterization](#environment-and-parameterization)
-            * [Algorithm](#algorithm)
-               * [Rewards](#rewards)
-            * [Implementation](#implementation)
-            * [Results](#results)
-            * [Future Work](#future-work)
-            * [References](#references)
+* [TensorFlow and StarCraft](#tensorflow-and-starcraft)
+* [Table of Contents](#table-of-contents)
+  * [Background](#background)
+        * [StarCraft](#starcraft)
+        * [AI research with StarCraft](#ai-research-with-starcraft)
+        * [BWAPI](#bwapi)
+        * [Torch](#torch)
+        * [TensorFlow](#tensorflow)
+        * [TorchCraft](#torchcraft)
+  * [This project](#this-project)
+     * [1. Python Client for BWAPI](#1-python-client-for-bwapi)
+     * [2. StarCraft TensorFlow agent examples](#2-starcraft-tensorflow-agent-examples)
+     * [3. A DQN for solving a difficult binary-success problem in StarCraft (that is, a DQN for a kiting micro-battle).](#3-a-dqn-for-solving-a-difficult-binary-success-problem-in-starcraft-that-is-a-dqn-for-a-kiting-micro-battle)
+        * [Abstract](#abstract)
+        * [Intro](#intro)
+        * [Environment and Parameterization](#environment-and-parameterization)
+        * [Algorithm](#algorithm)
+           * [Rewards](#rewards)
+        * [Implementation](#implementation)
+        * [Results](#results)
+        * [Future Work](#future-work)
+        * [References](#references)
 
 ## Background
 
