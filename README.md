@@ -223,13 +223,9 @@ End For
 
 Hyperparameters
 
-| T   | training batch size | 100 |
+| Variable   | Hyperparameter | value |
 |---- | ------------------- | --- |
 | T   | training batch size | 100 |
-| λ | learning rate | 0.01 |
-
-| --- | --- | --- |
-| T | training batch size | 100 |
 | λ | learning rate | 0.01 |
 | N<sub>W</sub> | win experience buffer size | 5000 |
 | N<sub>L</sub> | lose experience buffer size | 5000 |
@@ -238,6 +234,9 @@ Hyperparameters
 | γ | future reward discount | 0.99 |
 | τ | target network update rate | 0.001 |
 
+| --- | --- | --- |
+| T | training batch size | 100 |
+| λ | learning rate | 0.01 |
 We use the Adam gradient-descent algorithm from ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)). Also see [tensorflow](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer).
 
 Markdown | Less | Pretty
