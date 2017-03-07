@@ -1,3 +1,4 @@
+# TensorFlow and StarCraft
 
 Table of Contents
 =================
@@ -24,23 +25,24 @@ Table of Contents
             * [Future Work](#future-work)
             * [References](#references)
 
-# TensorFlow and StarCraft
-
 ## Background
 
 #### StarCraft
+
 - [StarCraft](https://en.wikipedia.org/wiki/StarCraft_(video_game)): A 1998 Real-Time strategy game. Used in lots of AI research, and also has a [strong professional competetive following](https://en.wikipedia.org/wiki/Professional_StarCraft_competition) in Korea worth ~millions of USD.
 - [Brood War](https://en.wikipedia.org/wiki/StarCraft:_Brood_War): The expansion pack for StarCraft.
 
 All professional competition and research with StarCraft these days uses the Brood War expansion.
 
-#### AI research with StarCraft:
+#### AI research with StarCraft
+
 Recent examples:
 - [Usunier et al, 2016](https://arxiv.org/abs/1609.02993), Episodic Exploration for Deep Deterministic Policies:
 An Application to StarCraft Micromanagement Tasks
 - [Foerster et al, 2017](https://arxiv.org/abs/1702.08887), Stabilising Experience Replay for Deep Multi-Agent Reinforcement Learning
 
 #### BWAPI
+
 The Brood War Application Programming Interface ([BWAPI](https://github.com/bwapi/bwapi)) allows interaction with a StarCraft client through C++ code.
 
 It is implemented as a C++ DLL injected into a running StarCraft client. The user of the API adds code interacting with the BWAPI library, builds a DLL, and runs a tool to inject that into a StarCraft client.
@@ -57,8 +59,7 @@ Torch is open-source, and maintained primarily by Facebook.
 
 TensorFlow is maintained by Google's Brain team. TensorFlow left Beta and V1  was published on 15th of Feb, 2017 ([github](https://github.com/tensorflow/tensorflow/releases/tag/v1.0.0), (announcement video)[https://www.youtube.com/watch?v=mWl45NkFBOc])
 
-
-#### TorchCraft:
+#### TorchCraft
 
 [TorchCraft](https://github.com/TorchCraft/TorchCraft) is A bridge between Torch and BWAPI, consisting of:
 - A socket server implemented in a C++ BWAPI DLL, that serves the StarCraft game state and takes commands.
