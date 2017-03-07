@@ -1,16 +1,18 @@
+
 # TensorFlow and StarCraft
 
 Table of Contents
 =================
 
    * [TensorFlow and StarCraft](#tensorflow-and-starcraft)
+   * [Table of Contents](#table-of-contents)
       * [Background](#background)
             * [StarCraft](#starcraft)
-            * [AI research with StarCraft:](#ai-research-with-starcraft)
+            * [AI research with StarCraft](#ai-research-with-starcraft)
             * [BWAPI](#bwapi)
             * [Torch](#torch)
             * [TensorFlow](#tensorflow)
-            * [TorchCraft:](#torchcraft)
+            * [TorchCraft](#torchcraft)
       * [This project](#this-project)
          * [1. Python Client for BWAPI](#1-python-client-for-bwapi)
          * [2. StarCraft TensorFlow agent examples](#2-starcraft-tensorflow-agent-examples)
