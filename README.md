@@ -186,8 +186,6 @@ Where _r_ is the reward gained from the environment for taking action a in state
 
 Pseudocode:
 
-```
-
 Initialize win experience buffer W to capacity N<sub>W</sub>
 Initialize lose experience buffer L to capacity N<sub>L</sub>
 Initialize action-value function Q with random weights θ
@@ -209,7 +207,6 @@ Initialize target action-value function Q^ with weights θ<sub>2</sub>
     append E to L
 End For
 End For
-```
 
 Hyperparameters
 
