@@ -197,22 +197,24 @@ For battle 1, ... do
   Initialise battle buffer E
   while battle_not_over do
     read state s from battle
-    if (battle < K)
+    if (battle <= K)
       select random action a
     else
-      with probability ε select a = "best boltzmann action"
+      with probability ε
+        select a = random choice of a_i with probability_weight softmax(Q(s, a_i, θ)/0.5)
       otherwise select a = argmax_a_i Q(s, a_i, θ)
-    execution a
+    execute a on battle
     read state s1 from battle
     set r to 1 if battle is won, -1 if lost, 0 otherwise.
     store transition (s, a, r, s1) in E
-    set B = T/2 random samples each from W and L
-    For each experience (s, a, r, s1) in B
-      set a1 = argmax_a_i Q(s1, a_i, θ)
-      set q1 = Q_2(s1, a1, θ_2)
-      set y = r + γ * q1
-      Update θ for loss (y - Q(s, a, θ))^2 with learning rate λ using Adam gradient-descent algorithm
-      Set θ_2 = τ*θ + (1-τ)*θ_2
+    if (battle > K)
+      select B = T/2 random samples each from W and L
+      For each experience (s, a, r, s1) in B
+        set a1 = argmax_a_i Q(s1, a_i, θ)
+        set q1 = Q_2(s1, a1, θ_2)
+        set y = r + γ * q1
+        Update θ for loss (y - Q(s, a, θ))^2 with learning rate λ using Adam gradient-descent algorithm
+        Set θ_2 = τ*θ + (1-τ)*θ_2
   End For
   if battle was won
     append E to W
