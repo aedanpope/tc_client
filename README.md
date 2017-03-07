@@ -96,11 +96,14 @@ For example, [Juliani's Q-Learing Part 0 blog post](https://medium.com/emergent-
 
 Recent research into Reinforcement learning has used _micromanagement battles_ in the the real-time strategy game StarCraft as benchmarks for reinforcement learning algorithms.
 
-Historically, the battles have been between symmetrical forces. Giving no orders in these battles (and defaulting to self-defence) can still result in a win 80%+ of the time. Many micro problems in StarCraft require very specific actions to have any chance of success.
+Historically, the battles have been between symmetrical forces. Giving no orders in these battles (and thus defaulting to self-defence) can still result in a win 80%+ of the time. Many micro problems in StarCraft require very specific actions to have any chance of success.
 
 When pitting a fast ranged unit vs. a slow melee one in StarCraft, the optimal control strategy for the ranged unit is to _Kite_ the melee one (fire from range, dance backwards before the melee unit can attack, and fire again). Giving no orders in this Battle to the ranged unit is a guaranteed loss, and randomly generating orders from a small but sufficient set results in nominal win rates (~1%).
 
-We show that a relatively generic DQN is able to learn to solve this battle with two key modifications: a much shorter experience buffer size of recent actions to re-train, and separate experience buffers for experience in battles which were won or lost.
+We show that a relatively generic DQN is able to learn to solve this battle with two key modifications:
+
+- A much shorter experience buffer size of recent actions to re-train.
+- Separate experience buffers for experience in battles which were won or lost.
 
 
 Human Expert winning the micro battle:: https://www.youtube.com/watch?v=PnEhLxpL29U
@@ -108,34 +111,32 @@ Human Expert winning the micro battle:: https://www.youtube.com/watch?v=PnEhLxpL
 The DQN learning an optimal strategy over time: https://www.youtube.com/watch?v=UHgK2RxLCKM
 
 
-#### Intro
-Recent AI research using Q-networks for StarCraft micro has looked primarily at symmetrical battles of groups of Marines. In particular, Marine 5v5 where the opponent just attack-moves the AI controlled 5 marines was studied in [Usunier et al, 2016](https://arxiv.org/abs/1609.02993) and [Foerster et al, 2017](https://arxiv.org/abs/1702.08887).
-
-This is a good environment for exploring the multi-agent problem, and extending models to the stochasitc high-dimensional StarCraft space.
+#### Introduction
+Recent AI research using Q-networks for StarCraft micro has looked primarily at symmetrical battles of groups of Marines. In particular, Marine 5v5 where the opponent just attack-moves the AI controlled 5 marines was studied in [Usunier et al, 2016](https://arxiv.org/abs/1609.02993) and [Foerster et al, 2017](https://arxiv.org/abs/1702.08887). This is a good environment for exploring the multi-agent problem, and extending models to the stochasitc high-dimensional StarCraft space.
 
 There are many challenges to the StarCraft environment that marine 5v5 does not expose us to:
 - Exploration complexity: Foerster et al. measure that giving _no_ orders to the friendly controlled marines leads to a win rate of 84% (Foerster, 2017), this means that agents have a decent default policy to iteratively learn and improve from.
 - Asymmetry: One of the interesting AI challenges of StarCraft is the asymmetry in micro battles and races. There are 3 distint races with very different units and technologies available, leading to 9 different roles a completely general StarCraft AI has to learn (i.e. controlling {Terran, Zerg, Protos} vs enemy {Terran, Zerg, Protoss} is 9 distinct problems to solve with many common features).
-- Planning: In marine 5v5, short term gains are a close proxy for long term victory. Doing some extra damage to the opponent this frame is probably good. In StarCraft, it's common to either:
+- Planning: In marine 5v5, short term gains are a close proxy for long term victory. Doing some extra damage to the opponent this frame is probably good. In both (Foerster et al., 2017) and (Usunier et al., 2016), the agents are rewarded for dealing more damage to the opponent than they take in a timestep. However, In StarCraft it's common to either:
   - Make short term sacrifices to realise a longer term advantage.
-  - Realise a short term advantage, without it being clear you've incurred a longer term disadvantage.
+  - Realise a short term advantage, without it being clear you've incurred a longer term disadvantage (you have dealt damage to an opponent but moved yourself into a position where you will take a lot more damage shortly).
 
 Consider a battle a [Terran Vulture](http://wiki.teamliquid.net/starcraft/Vulture) and a [Protoss Zealot](http://wiki.teamliquid.net/starcraft/Zealot).
 
 The vulture is a fast, fragile unit with a ranged attack. The zealot is a strong slow-moving unit with a melee attack. If a vulture and a zealot simply move directly to attack each other - the zealot will win.
 
-In professional StarCraft, it is commonly accepted that vultures beat zealots - because expert players will [micro](http://wiki.teamliquid.net/starcraft2/Micro_(StarCraft)#Battle_micro) the vultures to hit the zealot once from range, then dance back before the zealot can attack and hit it again. This techniqe of "dancing back" is called [kiting](http://wiki.teamliquid.net/starcraft2/Kiting).
+In professional StarCraft, it is commonly accepted that vultures beat zealots - because expert players will [micro](http://wiki.teamliquid.net/starcraft2/Micro_(StarCraft)#Battle_micro) the vultures to hit the zealot once from range, then dance back before the zealot can attack and hit it again. This techniqe of "dancing back" is called [kiting](http://wiki.teamliquid.net/starcraft2/Kiting). Here is a video of a human controlling a Vulture to consistently beat a Zealot by kiting: https://www.youtube.com/watch?v=PnEhLxpL29U
 
 A kiting micro battle is:
 - hard to win with null or random actions
 - asymmetrical
 - has a slightly longer planning horizion than Marine 5v5
 
-There has been [some previous research](https://scholar.google.co.uk/scholar?hl=en&q=starcraft+kiting&btnG=&as_sdt=1%2C5&as_sdtp=) into kiting in StarCraft using machine learning. Notably [Szlam 2016](https://arxiv.org/abs/1511.07401) where a generalized gaming agent was able to develope highly successful kiting strategies with reinforcement learning.
+There has been [some previous research](https://scholar.google.co.uk/scholar?hl=en&q=starcraft+kiting&btnG=&as_sdt=1%2C5&as_sdtp=) into kiting in StarCraft using machine learning. Notably (Sukhbaatar et al., 2016), where a generalized gaming agent was able to develope highly successful kiting strategies with reinforcement learning.
 
 In this project we consider the Kiting problem as a exercise to:
 - Demonstrating the usefulness of the TensorFlow integration into BWAPI.
-- See if a generic Deep Q-learning network can solve the kiting problem (that is, a network largely like that described in [(Lillicrap and Hunt, 2016)](https://arxiv.org/pdf/1509.02971.pdf))
+- See if a generic Deep Q-learning network can solve the kiting problem (that is, a network largely like that described in (Mnih et al, 2015).
 
 
 #### Environment and Parameterization
@@ -149,8 +150,6 @@ Our environment consits of a simplified 1v1 battle between a vulture and a zealo
 - Starting Positions: The two opposing units start close enough that if the vulture also simply attacks the zealot, the zealot will reach it and attack at melee range after the vulture fires one shot. The vulture must move to survive and win the battle.
 
 - Our vulture has 20 seconds to win the battle, otherwise the zealot wins by default.
-
-A video of a human winning the 4-kite exercise: https://www.youtube.com/watch?v=PnEhLxpL29U
 
 We parameterise the enivornment for input into the network as follows (see [agent.py](agent.py)):
 
@@ -167,10 +166,10 @@ We parameterise the enivornment for input into the network as follows (see [agen
 
 The output of the agent is a one-hot vector representing 6 possible orders:
 - Give no order, so the vulture continues with its current order.
-- Give an order to move 6 tiles in 4 possible directions {up, down, left right}. Note that it will take more than one timestep to finish moving 5 tiles.
-- Give an order to attack the enemy zealot. The vulture will move towards the zealot until it is in range, then fire.
+- Give an order to move 6 tiles in 4 possible directions {up, down, left right}. It will take more than one timestep to finish moving the 6 tiles.
+- Give an order to attack the enemy zealot. The vulture will move towards the zealot until it is in range, then fire, and pursue indefinitely.
 
-Note that if the vulture is standing still, then it defaults to the "guard" order, meaning that it will attack and pursue any enemy that comes within range.
+If the vulture is currently standing still, then it defaults to the "guard" order, meaning that it will attack and pursue any enemy that comes within range.
 
 
 #### Algorithm
@@ -185,7 +184,54 @@ _Q(s,a) = r + γ * max(Q(s1, a1))_
 
 Where _r_ is the reward gained from the environment for taking action a in state s.
 
+Pseudocode:
+
+```
+
+Initialize win experience buffer W to capacity N<sub>W</sub>
+Initialize lose experience buffer L to capacity N<sub>L</sub>
+Initialize action-value function Q with random weights θ
+Initialize target action-value function Q^ with weights θ<sub>2</sub>
+
+*For* episode 1, ... *do*
+  Initialise episode buffer E
+  Initialise new
+  while episode_not_over do
+    read state _s_ from environment
+    select random action _a_
+    execution _a_
+    read _s<sub>1</sub>_
+    set _r_ to 1 if battle won, -1 if lost, 0 otherwise.
+    store (_s_, _a_, _r_, s_1) in
+  if episode was won
+    append E to W
+  else
+    append E to L
+End For
+End For
+```
+
+Hyperparameters
+
+| | minimatch size | 100 |
+| | learning rate | 0.01 |
+| N<sub>W</sub> | win experience buffer size | 5000 |
+| N<sub>L</sub> | lose experience buffer size | 5000 |
+| K | replay start size | 100000 |
+| | exploration rate (see below) | 0.2 |
+| | future reward discount (γ) | 0.99 |
+| | target network update rate | 0.001 |
+
+
 ##### Rewards
+
+
+##### Exploration Strategy
+
+
+##### Multiple Buffers
+
+
 
 
 Unlike We give our agent *no* partial rewards d
@@ -207,16 +253,6 @@ Unlike We give our agent *no* partial rewards d
 
 https://www.youtube.com/watch?v=UHgK2RxLCKM
 
-Hyperparameters
-
-
-
-| Tables        | Are           | Cool  |
-| ------------- |:-------------:| -----:|
-| col 3 is      | right-aligned | $1600 |
-| col 2 is      | centered      |   $12 |
-| zebra stripes | are neat      |    $1 |
-
 
 
 #### Future Work
@@ -230,4 +266,8 @@ Mnih, Kavukcuoglu, Silver, Rusu, Veness, Bellemare, Graves, Riedmiller, Fidjelan
 
 Pritzel, Uria, Srinivasan, Puigdomènech, Vinyals, Hassabis, Wierstra, and Charles Blundell. _Neural Episodic Control_. arXiv preprint [arXiv:1703.01988](https://arxiv.org/abs/1703.01988)
 
-Usunier, Synnaeve, Lin, and Chintala. _Episodic Exploration for Deep Deterministic Policies: An Application to StarCraft Micromanagement Tasks_. arXiv preprint [arXiv:1609.02993](https://arxiv.org/abs/1609.02993), 2016
+Usunier, Synnaeve, Lin, and Chintala. _Episodic Exploration for Deep Deterministic Policies: An Application to StarCraft Micromanagement Tasks_. arXiv preprint [arXiv:1609.02993](https://arxiv.org/abs/1609.02993), 2016.
+
+Sukhbaatar, Szlam, Synnaeve, Chintala, and Fergus. _MazeBase: A Sandbox for Learning from Games_. arXiv preprint [arXiv:1511.07401](https://arxiv.org/abs/1511.07401), 2016.
+
+
