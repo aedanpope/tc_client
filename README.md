@@ -234,22 +234,7 @@ Hyperparameters
 | γ | future reward discount | 0.99 |
 | τ | target network update rate | 0.001 |
 
-| --- | --- | --- |
-| T | training batch size | 100 |
-| λ | learning rate | 0.01 |
-We use the Adam gradient-descent algorithm from ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)). Also see [tensorflow](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer).
-
-Markdown | Less | Pretty
---- | --- | ---
-*Still* | `renders` | **nicely**
-1 | 2 | 3
-
-| Tables        | Are           | Cool  |
-| ------------- |:-------------:| -----:|
-| col 3 is      | right-aligned | $1600 |
-| col 2 is      | centered      |   $12 |
-| zebra stripes | are neat      |    $1 |
-
+We use the Adam gradient-descent algorithm from ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)). Also see TensorFlow [tf.train.AdamOptimizer](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer).
 
 ##### Rewards
 
