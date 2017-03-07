@@ -224,6 +224,10 @@ End For
 
 Hyperparameters
 
+| T   | training batch size | 100 |
+|---- | ------------------- | --- |
+| T   | training batch size | 100 |
+
 | --- | --- | --- |
 | T | training batch size | 100 |
 | λ | learning rate | 0.01 |
@@ -262,6 +266,13 @@ Unlike We give our agent *no* partial rewards d
 
 
 
+#### Results
+
+https://www.youtube.com/watch?v=UHgK2RxLCKM
+
+
+#### Conclusions
+
 
 #### Implementation
 
@@ -269,12 +280,6 @@ Unlike We give our agent *no* partial rewards d
 - [dnq_bot.py](dnq_bot.py): The DQN network implementation in TensorFlow.
 - [exercise.py](exercise.py): ```main()``` function to run multiple trials on multiple hyperparameter configurations, and interface between the agent and [tc_client.py](tc_client.py).
 - [agent.py](agent.py): Generic StarCraft micro-battle agent code for recording the game state and parameterising it.
-
-
-
-#### Results
-
-https://www.youtube.com/watch?v=UHgK2RxLCKM
 
 
 
