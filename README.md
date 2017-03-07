@@ -238,10 +238,36 @@ Hyperparameters
 
 We use the Adam gradient-descent algorithm for training the network ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)). Also see TensorFlow [tf.train.AdamOptimizer](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer).
 
+
+#### Results
+
+After pre-training for 100k timesteps, the network is generally able to learn an optimal strategy in 20-25k steps:
+
+https://www.youtube.com/watch?v=UHgK2RxLCKM
+
+
+Win rates by testing the best guess of the network from 100 battles * 5 trials after a given number of training steps:
+
+| Training Steps | Win rate |
+| --- | --- |
+| 5k | 0.405 |
+| 10k | 0.362 |
+| 15k | 0.334 |
+| 20k | 0.434 |
+
+TODO run this experiment again with more trials, results are super noisy wiht occasional zeros 20k = (0.27, 0.7, 0.0, 0.69, 0.51) but the sample we recorded (in a single trial) for the video was 1.0 here.
+
+
 ##### Rewards
 
+We give the agent a binary +1 or -1 reward at the end of the battle depending on if it wins or loses. This guarantees that the agent learns to only value total victory and thus *must learn to plan ahead*.
+
+Unlike (Foerster et al., 2017) and (Usunier et al., 2016), we do not give the agent any partial rewards for dealing more damage to the opponent than they take in a given timestep. We originally experimented with this, but found that the agent would get stuck in greedy local optima, where it would fire at the zealot but not run away in time - happy with the small reward it had incurred. Attempting to explicitly reward incurring damage in one timestep and not suffering damage within a set number of future timesteps trained the agent to be too risk adverse, not moving in to kill off the opponent.
 
 ##### Exploration Strategy
+
+Our binary reward policy makes exploration hard. There is no "hints" or "hill to climb".
+
 
 
 ##### Multiple Buffers
@@ -249,14 +275,8 @@ We use the Adam gradient-descent algorithm for training the network ([Kingma et.
 
 
 
-Unlike We give our agent *no* partial rewards d
 
 
-
-
-#### Results
-
-https://www.youtube.com/watch?v=UHgK2RxLCKM
 
 
 #### Conclusions
