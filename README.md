@@ -212,7 +212,7 @@ For battle 1, ... do
       set q1 = Q(s1, a1, θ_2)
       set y = r + γ * q1
       perform AdamOptimizer
-      Update θ for loss (y - Q(s, a, θ))^2 with learning rate λ using Adam gradient-descent algorithm ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980))
+      Update θ for loss (y - Q(s, a, θ))^2 with learning rate λ using Adam gradient-descent algorithm ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)) ([tensorflow](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer))
       Set θ_2 = τ*θ + (1-τ)*θ_2
   End For
   if battle was won
@@ -224,7 +224,7 @@ End For
 
 Hyperparameters
 
----
+| --- | --- | --- |
 | T | training batch size | 100 |
 | λ | learning rate | 0.01 |
 | N<sub>W</sub> | win experience buffer size | 5000 |
