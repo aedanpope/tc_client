@@ -186,38 +186,52 @@ Where _r_ is the reward gained from the environment for taking action a in state
 
 Pseudocode:
 
-Initialize win experience buffer W to capacity N<sub>W</sub>
-Initialize lose experience buffer L to capacity N<sub>L</sub>
-Initialize action-value function Q with random weights θ
-Initialize target action-value function Q^ with weights θ<sub>2</sub>
+```
 
-*For* episode 1, ... *do*
-  Initialise episode buffer E
-  Initialise new
-  while episode_not_over do
-    read state _s_ from environment
-    select random action _a_
-    execution _a_
-    read _s<sub>1</sub>_
-    set _r_ to 1 if battle won, -1 if lost, 0 otherwise.
-    store (_s_, _a_, _r_, s_1) in
-  if episode was won
+Initialize win experience buffer W to capacity N_w
+Initialize lose experience buffer L to capacity N_l
+Initialize action-value function Q with random weights θ
+Initialize target action-value function Q_2 with random weights θ_2
+
+For battle 1, ... do
+  Initialise battle buffer E
+  while battle_not_over do
+    read state _s_ from battle
+    if (battle < K)
+      select random action a
+    else
+      with probability ε select a = "best boltzmann action"
+      otherwise select a = argmax_a_i Q(s, a_i, θ)
+    execution a
+    read state s_1 from battle
+    set _r_ to 1 if battle is won, -1 if lost, 0 otherwise.
+    store transition (s, a, r, s_1) in E
+    set B = T/2 random samples each from W and L
+    For each experience (s, a, r, s1) in B
+      set a1 = argmax_a_i Q(s_1, a_i, θ)
+      set q1 = Q(s1, a1, θ_2)
+      set y = r + γ * q1
+      perform AdamOptimizer
+      Update θ for loss (y - Q(s, a, θ))^2 with learning rate λ using Adam gradient-descent algorithm ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980))
+      Set θ_2 = τ*θ + (1-τ)*θ_2
+  End For
+  if battle was won
     append E to W
   else
     append E to L
 End For
-End For
+```
 
 Hyperparameters
 
-| | minimatch size | 100 |
-| | learning rate | 0.01 |
+| T | training batch size | 100 |
+| λ | learning rate | 0.01 |
 | N<sub>W</sub> | win experience buffer size | 5000 |
 | N<sub>L</sub> | lose experience buffer size | 5000 |
 | K | replay start size | 100000 |
-| | exploration rate (see below) | 0.2 |
-| | future reward discount (γ) | 0.99 |
-| | target network update rate | 0.001 |
+| ε | exploration rate (see below) | 0.2 |
+| γ | future reward discount | 0.99 |
+| τ | target network update rate | 0.001 |
 
 
 ##### Rewards
