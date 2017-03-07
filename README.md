@@ -224,6 +224,7 @@ End For
 
 Hyperparameters
 
+---
 | T | training batch size | 100 |
 | λ | learning rate | 0.01 |
 | N<sub>W</sub> | win experience buffer size | 5000 |
