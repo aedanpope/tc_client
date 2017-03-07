@@ -174,20 +174,20 @@ If the vulture is currently standing still, then it defaults to the "guard" orde
 
 #### Algorithm
 
-We use a deep neural network to approximate the optimal action-value function
+We use a deep neural network to approximate the optimal action-value function.
 
 _Q(s,a)_ = reward for taking action _a_ in state _s_ plus all discounted future reward (so the best action a in a state s is the one such that Q(s,a) is maximum)
 
-With the continuous Q-learning update:
+Network Topology:
+- 23 input nodes
+- fully connected hidden layer of size 200, activation function ReLU
+- fully connected hidden layer of size 300, activation function ReLU
+- 6 output nodes, activation function TanH
 
-_Q(s,a) = r + γ * max(Q(s1, a1))_
-
-Where _r_ is the reward gained from the environment for taking action a in state s.
 
 Pseudocode:
 
 ```
-
 Initialize win experience buffer W to capacity N_w
 Initialize lose experience buffer L to capacity N_l
 Initialize action-value function Q with random weights θ
@@ -234,7 +234,7 @@ Hyperparameters
 | γ | future reward discount | 0.99 |
 | τ | target network update rate | 0.001 |
 
-We use the Adam gradient-descent algorithm from ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)). Also see TensorFlow [tf.train.AdamOptimizer](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer).
+We use the Adam gradient-descent algorithm for training the network ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)). Also see TensorFlow [tf.train.AdamOptimizer](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer).
 
 ##### Rewards
 
