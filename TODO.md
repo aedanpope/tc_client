@@ -26,7 +26,7 @@ Keep reading https://arxiv.org/pdf/1509.02971.pdf,
 Other things to try:
 - decay training examples.
 - dropout (if we use large hidden layers). Also see: Bayesian
-- Recurrent DNQ https://arxiv.org/abs/1605.06676
+- Recurrent DQN https://arxiv.org/abs/1605.06676
 - multi agent: https://arxiv.org/abs/1702.08887
 - various exploration methods (e.g. Boltzmann, Bayesian)
 - a separate network to predict next state (maybe of just opponent)

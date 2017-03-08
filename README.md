@@ -315,7 +315,7 @@ Mean that our algorithm is able to repeatably and successfully solve a problem w
 #### Implementation
 
 
-- [dnq_bot.py](dnq_bot.py): The DQN network implementation in TensorFlow.
+- [dqn_bot.py](dqn_bot.py): The DQN network implementation in TensorFlow.
 - [exercise.py](exercise.py): ```main()``` function to run multiple trials on multiple hyperparameter configurations, and interface between the agent and [tc_client.py](tc_client.py).
 - [agent.py](agent.py): Generic StarCraft micro-battle agent code for recording the game state and parameterising it.
 
