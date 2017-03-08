@@ -325,14 +325,14 @@ Mean that our algorithm is able to repeatably and successfully solve a problem w
 
 Foerster, Nardelli, Farquhar, H. S. Torr, Kohli, and Whiteson. _Stabilising Experience Replay for Deep Multi-Agent Reinforcement Learning_. arXiv preprint [arXiv:1702.08887](https://arxiv.org/abs/1702.08887), 2017.
 
+Kingma, Ba, _Adam: A Method for Stochastic Optimization_, arXiv preprint [arXiv:1412.6980](https://arxiv.org/abs/1412.6980), 2014.
+
+Lillicrap, Hunt, Pritzel, Heess, Erez, Tassa, Silver, Wierstra. _Continuous control with deep reinforcement learning_. arXiv preprint [arXiv:1509.02971](https://arxiv.org/abs/1509.02971), 2015.
+
 Mnih, Kavukcuoglu, Silver, Rusu, Veness, Bellemare, Graves, Riedmiller, Fidjeland, Ostrovski, Petersen, Beattie, Sadik, Antonoglou, King, Kumaran, Wierstra, Legg, Hassabis. _Human level control through deep reinforcement learning_. Nature, 518(7540):529–533, 2015.
 
 Pritzel, Uria, Srinivasan, Puigdomènech, Vinyals, Hassabis, Wierstra, and Charles Blundell. _Neural Episodic Control_. arXiv preprint [arXiv:1703.01988](https://arxiv.org/abs/1703.01988), 2017.
 
 Usunier, Synnaeve, Lin, and Chintala. _Episodic Exploration for Deep Deterministic Policies: An Application to StarCraft Micromanagement Tasks_. arXiv preprint [arXiv:1609.02993](https://arxiv.org/abs/1609.02993), 2016.
 
-Lillicrap, Hunt, Pritzel, Heess, Erez, Tassa, Silver, Wierstra. _Continuous control with deep reinforcement learning_. arXiv preprint [arXiv:1509.02971](https://arxiv.org/abs/1509.02971), 2015.
-
 Sukhbaatar, Szlam, Synnaeve, Chintala, and Fergus. _MazeBase: A Sandbox for Learning from Games_. arXiv preprint [arXiv:1511.07401](https://arxiv.org/abs/1511.07401), 2016.
-
-([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)) ([tensorflow](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer))
