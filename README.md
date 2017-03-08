@@ -260,26 +260,48 @@ TODO run this experiment again with more trials, results are super noisy wiht oc
 
 ##### Rewards
 
-We give the agent a binary +1 or -1 reward at the end of the battle depending on if it wins or loses. This guarantees that the agent learns to only value total victory and thus *must learn to plan ahead*.
+We give the agent a binary +1 or -1 reward at the end of the battle depending on if it wins or loses. This is the only reward the agent gets, so it is encouraged to plan ahead for long term reward.
 
 Unlike (Foerster et al., 2017) and (Usunier et al., 2016), we do not give the agent any partial rewards for dealing more damage to the opponent than they take in a given timestep. We originally experimented with this, but found that the agent would get stuck in greedy local optima, where it would fire at the zealot but not run away in time - happy with the small reward it had incurred. Attempting to explicitly reward incurring damage in one timestep and not suffering damage within a set number of future timesteps trained the agent to be too risk adverse, not moving in to kill off the opponent.
 
-##### Exploration Strategy
 
-Our binary reward policy makes exploration hard. There is no "hints" or "hill to climb".
+##### Experience Buffers and Exploration
 
+Randomly choosing actions from the 6 possible commands results in a win-rate of ~1.1%. This means that the traditional DQN with a single experience buffer is training examples with -ve reward the vast majority of the time. In experiments with this strategy, the agents would never learn how to win - just how to delay defeat for as long as possible.
 
+*Two Buffers*
 
-##### Multiple Buffers
+By storing experience from won and loss battles in separate buffers, and choosing half of the training sample from each, we ensure that the agent is able to learn some positive behaviours as well as negative.
 
+*Shorter experience buffer*
 
+The DQNs from (Mnih et al., 2015) and (Lillicrap et al., 2015) use an experience buffer of 10^6 time steps. We experimented with a buffer of size 10^5 but found the agent unable to develop a strong winning strategy.
 
+Consider that in our case, the successful strategies in battles won in random exploration are likely to involve a lot of chaotic action and large idle time periods of the agent not firing (e.g. ~50 timesteps), whereas the optimal strategy of a human expert is to fire as soon as there is enough distance from the enemy and the weapon is off of cooldown (e.g. finishing a battle in 10 timesteps).
 
+Intuitively, a shorter buffer (10k in our case) allows the agent to focus on learning recent successful wins, and learning recent mistakes made. This allows the agent to quickly learn to improve once it does find a successful strategy. It can try variants of that strategy, and with the short buffer then is likely to train the variants that failed a lot. So it is able to make small adjustments to a winning strategy until it is optimised.
 
+We set the initial replay dataset to 10^5 timesteps, this generally resulted in about 4000 timesteps of positive reward - which would almost fill the Win Buffer of length 5000, which was a health start to then begin training from.
 
+It seems like a good choice of Win+Loss buffer size for this technique is one that holds ~100-500 episodes of data (each of our battles is ~10-50 timesteps).
+
+*Fixed ε=0.2 value*
+
+Other DQN examples in the literature anneal ε down from 1 to a small value, commonly 0.1. In our case there's not much point at exploring with high ε values once we have the initial random-action replay dataset collected - instead it's faster to just train the positive examples we have from the initial exploration, and then start learning what variants of those examples fail.
+
+Conversely, ε=0.2 is a good choice for this particular environment since the Vulture's weapon cools down in about 5 timesteps - and so it makes sense to try one deviation from the known strategy with this cadence. If ε is smaller then convergence to a winning strategy takes longer, if ε is larger then the bot struggles to develop a winning strategy at all as it's always losing from the chaos (The bot requires at least 10 timesteps to win, and can instantly lose if 1-2 of the actions in these timesteps are bad).
 
 
 #### Conclusions
+
+The use of:
+- separate Win+Loss buffers
+- buffer size approx 100-500 battles
+- fixed ε=0.2
+- 10^5 random exploration before training begins
+
+Means that the bot is then able to learn the optimal strategy in 2-3*10^4 timesteps, which is 5x faster than the time we need to spend on raw exploration.
+
 
 
 #### Implementation
@@ -303,6 +325,8 @@ Mnih, Kavukcuoglu, Silver, Rusu, Veness, Bellemare, Graves, Riedmiller, Fidjelan
 Pritzel, Uria, Srinivasan, Puigdomènech, Vinyals, Hassabis, Wierstra, and Charles Blundell. _Neural Episodic Control_. arXiv preprint [arXiv:1703.01988](https://arxiv.org/abs/1703.01988)
 
 Usunier, Synnaeve, Lin, and Chintala. _Episodic Exploration for Deep Deterministic Policies: An Application to StarCraft Micromanagement Tasks_. arXiv preprint [arXiv:1609.02993](https://arxiv.org/abs/1609.02993), 2016.
+
+Lillicrap, Hunt, Pritzel, Heess, Erez, Tassa, Silver, Wierstra. _Continuous control with deep reinforcement learning_. arXiv preprint [arXiv:1509.02971](https://arxiv.org/abs/1509.02971), 2015.
 
 Sukhbaatar, Szlam, Synnaeve, Chintala, and Fergus. _MazeBase: A Sandbox for Learning from Games_. arXiv preprint [arXiv:1511.07401](https://arxiv.org/abs/1511.07401), 2016.
 
