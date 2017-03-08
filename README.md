@@ -233,7 +233,7 @@ Hyperparameters
 | N<sub>W</sub> | win experience buffer size | 5000 |
 | N<sub>L</sub> | lose experience buffer size | 5000 |
 | K | replay start size | 100000 |
-| ε | exploration rate (see below) | 0.2 |
+| ε | exploration rate | 0.2 |
 | γ | future reward discount | 0.99 |
 | τ | target network update rate | 0.001 |
 
@@ -306,7 +306,7 @@ Mean that our algorithm is able to repeatably and successfully solve a problem w
 
 #### Future Work
 
-- See if we can extend the algorithm to solve a harder kiting battle. Recall that _n_ is the environment parameter of the number of hits that the vulture requires to kill the zealot (and the zealot always kills the vulture in one hit). Perhapse the same algorithm can solve 3-kite or 4-kite. It's unlikely it will succeed for high values of n, as the amount of random exploration required to fill the win buffer will exponentially increase (it takes ~5 timesteps to fire once at the zealot and dance back, so the number of good random choices required for victory is O(n), and the probability of making enough good choices to win is then O(p^n)). Maybe: we can learn the beginnings of a successful strategy for, say n=4, by training an agent against n=2 and then slowly introducing n=3 and n=4 episodes into the conflict. Or by evenly cycling between battles of n=2,3,4 (only resulting in linear growth of the amount of initial exploration required to fill the win buffer).
+- See if we can extend the algorithm to solve a harder kiting battle. Recall that _n_ is the environment parameter of the number of hits that the vulture requires to kill the zealot (and the zealot always kills the vulture in one hit). Perhaps the same algorithm can solve 3-kite or 4-kite. It's unlikely it will succeed for high values of n, as the amount of random exploration required to fill the win buffer will exponentially increase (it takes ~5 timesteps to fire once at the zealot and dance back, so the number of good random choices required for victory is O(n), and the probability of making enough good choices to win is then O(p^n) for some probability p < 1). Maybe we can learn the beginnings of a successful strategy for, say n=4, by training an agent against n=2 and then slowly introducing n=3 and n=4 episodes into the conflict. Or by evenly cycling between battles of n=2,3,4 (only resulting in linear growth of the amount of initial exploration required to fill the win buffer).
 
 - Find other 1%-random-success problems and see if these modifications can solve problems of this nature in general.
 
