@@ -1,4 +1,3 @@
-
 # TensorFlow and StarCraft
 
 * [Background](#background)
@@ -13,13 +12,15 @@
    * [2. StarCraft TensorFlow agent examples](#2-starcraft-tensorflow-agent-examples)
    * [3. A DQN for solving a difficult binary-success problem in StarCraft (that is, a DQN for a kiting micro-battle).](#3-a-dqn-for-solving-a-difficult-binary-success-problem-in-starcraft-that-is-a-dqn-for-a-kiting-micro-battle)
       * [Abstract](#abstract)
-      * [Intro](#intro)
+      * [Introduction](#introduction)
       * [Environment and Parameterization](#environment-and-parameterization)
       * [Algorithm](#algorithm)
-         * [Rewards](#rewards)
-      * [Implementation](#implementation)
       * [Results](#results)
+         * [Rewards](#rewards)
+         * [Experience Buffers and Exploration](#experience-buffers-and-exploration)
+      * [Conclusions](#conclusions)
       * [Future Work](#future-work)
+      * [Implementation](#implementation)
       * [References](#references)
 
 ## Background
@@ -335,4 +336,3 @@ Lillicrap, Hunt, Pritzel, Heess, Erez, Tassa, Silver, Wierstra. _Continuous cont
 Sukhbaatar, Szlam, Synnaeve, Chintala, and Fergus. _MazeBase: A Sandbox for Learning from Games_. arXiv preprint [arXiv:1511.07401](https://arxiv.org/abs/1511.07401), 2016.
 
 ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)) ([tensorflow](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer))
-
