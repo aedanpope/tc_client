@@ -98,15 +98,15 @@ Recent research into Reinforcement learning has used _micromanagement battles_ i
 
 Historically, the battles have been between symmetrical forces. Giving no orders in these battles (and thus defaulting to self-defence) can still result in a win 80%+ of the time. Many micro problems in StarCraft require very specific actions to have any chance of success.
 
-When pitting a fast ranged unit vs. a slow melee one in StarCraft, the optimal control strategy for the ranged unit is to _Kite_ the melee one (fire from range, dance backwards before the melee unit can attack, and fire again). Giving no orders in this Battle to the ranged unit is a guaranteed loss, and randomly generating orders from a small but sufficient set results in nominal win rates (~1%).
+When pitting a fast ranged unit vs. a slow melee one in StarCraft, the optimal control strategy for the ranged unit is to _Kite_ the melee one (fire from range, dance backwards before the melee unit can attack, and fire again). Giving no orders in this Battle to the ranged unit is a guaranteed loss.
 
-We show that a relatively generic DQN is able to learn to solve this battle with two key modifications:
+We construct a simplified battle where kiting is the optimal stragey, and where randomly generating orders from a small but sufficient set results in nominal win rates (~1%). Then we show that a relatively generic DQN is able to learn to solve this battle with two key modifications:
 
 - A much shorter experience buffer size of recent actions to re-train.
 - Separate experience buffers for experience in battles which were won or lost.
 
 
-Human Expert winning the micro battle:: https://www.youtube.com/watch?v=PnEhLxpL29U
+Human Expert winning the micro battle: https://www.youtube.com/watch?v=PnEhLxpL29U
 
 The DQN learning an optimal strategy over time: https://www.youtube.com/watch?v=UHgK2RxLCKM
 
@@ -143,7 +143,7 @@ In this project we consider the Kiting problem as a exercise to:
 
 Our environment consits of a simplified 1v1 battle between a vulture and a zealot.
 
-- The hit points and damage of the units are modified such that the zealot kills the vulture in one attack, and the vulture kills the zealot in _n_ attacks - where _n_ is a parameter in {2,3,4}. For a particular _n_, we call the environment "_n_-kite". n is in [2,3,4]
+- The hit points and damage of the units are modified such that the zealot kills the vulture in one attack, and the vulture kills the zealot in _n_ attacks - where _n_ is a parameter in ℤ<sup>+</sup>. For a particular _n_, we call the environment "_n_-kite". We chose n=2 going forward.
 
 - Zealot: the enemy unit controlled by the environment, ordered to attack directly at the vulture.
 - Vulture: the unit controlled by our agent.
@@ -289,19 +289,27 @@ It seems like a good choice of Win+Loss buffer size for this technique is one th
 
 Other DQN examples in the literature anneal ε down from 1 to a small value, commonly 0.1. In our case there's not much point at exploring with high ε values once we have the initial random-action replay dataset collected - instead it's faster to just train the positive examples we have from the initial exploration, and then start learning what variants of those examples fail.
 
-Conversely, ε=0.2 is a good choice for this particular environment since the Vulture's weapon cools down in about 5 timesteps - and so it makes sense to try one deviation from the known strategy with this cadence. If ε is smaller then convergence to a winning strategy takes longer, if ε is larger then the bot struggles to develop a winning strategy at all as it's always losing from the chaos (The bot requires at least 10 timesteps to win, and can instantly lose if 1-2 of the actions in these timesteps are bad).
+Conversely, ε=0.2 is a good choice for this particular environment since the vulture's weapon cools down in about 5 timesteps - and so it makes sense to try one deviation from the known strategy with this cadence. If ε is smaller then convergence to a winning strategy takes longer, if ε is larger then the bot struggles to develop a winning strategy at all as it's always losing from the chaos (The bot requires at least 10 timesteps to win, and can instantly lose if 1-2 of the actions in these timesteps are bad).
 
 
 #### Conclusions
 
-The use of:
-- separate Win+Loss buffers
-- buffer size approx 100-500 battles
-- fixed ε=0.2
-- 10^5 random exploration before training begins
+These modifications to a generic DQN:
+- separate Win+Loss experience buffers
+- buffer size approx 100-500 episodes (battles)
+- fixed ε=0.2 (or likely more generally, a non-trivial value for ε that we don't waste time annealing down to)
+- 10^5 random exploration before training begins (enough to fill the Win experience buffer)
 
-Means that the bot is then able to learn the optimal strategy in 2-3*10^4 timesteps, which is 5x faster than the time we need to spend on raw exploration.
+Mean that our algorithm is able to repeatably and successfully solve a problem with a 1% random success rate.
 
+
+#### Future Work
+
+- See if we can extend the algorithm to solve a harder kiting battle. Recall that _n_ is the environment parameter of the number of hits that the vulture requires to kill the zealot (and the zealot always kills the vulture in one hit). Perhapse the same algorithm can solve 3-kite or 4-kite. It's unlikely it will succeed for high values of n, as the amount of random exploration required to fill the win buffer will exponentially increase (it takes ~5 timesteps to fire once at the zealot and dance back, so the number of good random choices required for victory is O(n), and the probability of making enough good choices to win is then O(p^n)). Maybe: we can learn the beginnings of a successful strategy for, say n=4, by training an agent against n=2 and then slowly introducing n=3 and n=4 episodes into the conflict. Or by evenly cycling between battles of n=2,3,4 (only resulting in linear growth of the amount of initial exploration required to fill the win buffer).
+
+- Find other 1%-random-success problems and see if these modifications can solve problems of this nature in general.
+
+- Combine this work with (Foerster et al., 2017)'s on multi-unit micro battles in StarCraft to see if we can win multi-unit kiting battles (e.g. 5 Vultures vs. 5 Zealots).
 
 
 #### Implementation
@@ -310,10 +318,6 @@ Means that the bot is then able to learn the optimal strategy in 2-3*10^4 timest
 - [dnq_bot.py](dnq_bot.py): The DQN network implementation in TensorFlow.
 - [exercise.py](exercise.py): ```main()``` function to run multiple trials on multiple hyperparameter configurations, and interface between the agent and [tc_client.py](tc_client.py).
 - [agent.py](agent.py): Generic StarCraft micro-battle agent code for recording the game state and parameterising it.
-
-
-
-#### Future Work
 
 
 #### References
