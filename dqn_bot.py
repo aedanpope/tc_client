@@ -4,7 +4,7 @@
 # http://karpathy.github.io/2016/05/31/rl/
 #
 # TODO:
-# 1. DNQ network first:
+# 1. DQN network first:
 # https://medium.com/@awjuliani/simple-reinforcement-learning-with-tensorflow-part-4-deep-q-networks-and-beyond-8438a3e2b8df#.1p0qomyrr
 #
 # 2.Way better exploration ala
@@ -17,7 +17,7 @@
 # https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-8-asynchronous-actor-critic-agents-a3c-c88f72a5e9f2#.449tze1hh
 
 #
-# DNQ Bot:
+# DQN Bot:
 # - SKIP: Convolution network.
 # - Target Network
 # - Experience Replay
@@ -143,7 +143,7 @@ def get_uid():
   UID += 1
   return UID
 
-class DNQNetwork:
+class DQNNetwork:
   state_in = None
   q_out = None
   action_out = None
@@ -348,8 +348,8 @@ class Bot:
     # TODO: put some token in the node names so multiple bots can have their own graphs
     # in a single TF session.
 
-    self.main_network = DNQNetwork('main')
-    self.target_network = DNQNetwork('target')
+    self.main_network = DQNNetwork('main')
+    self.target_network = DQNNetwork('target')
     TF_WRITER = tf.summary.FileWriter('/tmp/tfgraph', SESS.graph)
     SESS.run(tf.global_variables_initializer())
     # Init the target network to be equal to the primary network.
@@ -466,7 +466,7 @@ class Bot:
         SETTINGS.mode == Mode.train and
         self.experience_buffer.enough_to_sample(HP.BATCH_SIZE)):
       # print "train WTF"
-      DNQNetwork.train_batch(self.main_network, self.target_network, self.experience_buffer.sample(HP.BATCH_SIZE))
+      DQNNetwork.train_batch(self.main_network, self.target_network, self.experience_buffer.sample(HP.BATCH_SIZE))
       # Set the target network to be equal to the primary network, with factor TAU = 0.001
       self.target_network.update_from_main_graph(self.main_network)
 
