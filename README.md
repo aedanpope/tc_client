@@ -55,7 +55,7 @@ Torch is open-source, and maintained primarily by Facebook.
 
 [TensorFlow](https://www.tensorflow.org/) is an open-source library for machine learning like Torch, but has support in more languages (Python, C++, Java, GO) and more features (e.g. run on a mobile device, Google Cloud Platform).
 
-TensorFlow is maintained by Google's Brain team. TensorFlow left Beta and V1  was published on 15th of Feb, 2017 ([github](https://github.com/tensorflow/tensorflow/releases/tag/v1.0.0), (announcement video)[https://www.youtube.com/watch?v=mWl45NkFBOc])
+TensorFlow is maintained by Google's Brain team. TensorFlow left Beta and V1  was published on 15th of Feb, 2017 ([github](https://github.com/tensorflow/tensorflow/releases/tag/v1.0.0), [announcement video](https://www.youtube.com/watch?v=mWl45NkFBOc))
 
 #### TorchCraft
 
@@ -75,21 +75,22 @@ The main advantage of TorchCraft is that one can build a StarCraft agent in a Un
 
 ### 1. Python Client for BWAPI
 
-Why? So that we can use the very nice TensorFlow python api in a native Unix environment for building StarCraft AIs.
+Goal: use the TensorFlow python api in a native Unix environment for building StarCraft AIs.
 
 We've written a python client for the TorchCraft C++ server:
 - Network IO is generally in [tc_client.py](tc_client.py).
 - The TorchCraft server returns the game-state as a Lua object string, which we transform into a python object string and ```eval()``` [here](https://github.com/aedanpope/tc_client/blob/427aafc9aa5dce7561325e74c64f4e8a13905e5e/tc_client.py#L254).
 - [state.py](state.py) is responsible for parsing the responses from the server and turning them into typed obejects.
+- [exercise.py](exercise.py) shows a ```main()``` function which instantiates a client and sends it commands from an agent.
 
 
 ### 2. StarCraft TensorFlow agent examples
 
-The existing best-class environment for StarCraft research is TorchCraft (used in [[1](https://arxiv.org/abs/1609.02993), [2](https://arxiv.org/abs/1702.08887)]).
+The existing best-class environment for StarCraft research is TorchCraft (used in recent research [[1](https://arxiv.org/abs/1609.02993), [2](https://arxiv.org/abs/1702.08887)]).
 
 TensorFlow support for BWAPI makes writing machine learning agents accessible to everyone who knows TensorFlow, and is a solid long-term investment as TensorFlow grows in popularity and functionality. For example, TensorFlow's [github](https://github.com/tensorflow/tensorflow) has ~10x more commits than [Torch's](https://github.com/torch/torch7).
 
-For example, [Juliani's Q-Learing Part 0 blog post](https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-0-q-learning-with-tables-and-neural-networks-d195264329d0#.icolg93n8) cointains sample TensorFlow code for a simple Q-network, which we've implemented to control a starcraft agent in [bot_q_learner_simple_a.py](bot_q_learner_simple_a.py) (the relevant TensorFlow code is [here](https://github.com/aedanpope/tc_client/blob/728ac6b889b1aa702ecea65a7a49bdb99d2625cd/bot_q_learner_simple_a.py#L127)).
+For example, [Juliani's Q-Learing Part 0 blog post](https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-0-q-learning-with-tables-and-neural-networks-d195264329d0#.icolg93n8) cointains sample TensorFlow code for a simple Q-network, which we've implemented to control a starcraft agent in [bot_q_learner_simple_a.py](bot_q_learner_simple_a.py) (the TensorFlow code specifically is [here](https://github.com/aedanpope/tc_client/blob/728ac6b889b1aa702ecea65a7a49bdb99d2625cd/bot_q_learner_simple_a.py#L127)).
 
 ### 3. A DQN for solving a difficult binary-success problem in StarCraft (that is, a DQN for a kiting micro-battle).
 
@@ -97,7 +98,7 @@ For example, [Juliani's Q-Learing Part 0 blog post](https://medium.com/emergent-
 
 Recent research into Reinforcement learning has used _micromanagement battles_ in the the real-time strategy game StarCraft as benchmarks for reinforcement learning algorithms.
 
-Historically, the battles have been between symmetrical forces. Giving no orders in these battles (and thus defaulting to self-defence) can still result in a win 80%+ of the time. Many micro problems in StarCraft require very specific actions to have any chance of success.
+In this research, the battles have been between symmetrical forces. Giving no orders in these battles (and thus defaulting to self-defence) can still result in a win 80%+ of the time. However, many micro problems in real StarCraft games require very specific actions to have any chance of success.
 
 When pitting a fast ranged unit vs. a slow melee one in StarCraft, the optimal control strategy for the ranged unit is to _Kite_ the melee one (fire from range, dance backwards before the melee unit can attack, and fire again). Giving no orders in this Battle to the ranged unit is a guaranteed loss.
 
@@ -116,7 +117,7 @@ The DQN learning an optimal strategy over time: https://www.youtube.com/watch?v=
 Recent AI research using Q-networks for StarCraft micro has looked primarily at symmetrical battles of groups of Marines. In particular, Marine 5v5 where the opponent just attack-moves the AI controlled 5 marines was studied in [Usunier et al, 2016](https://arxiv.org/abs/1609.02993) and [Foerster et al, 2017](https://arxiv.org/abs/1702.08887). This is a good environment for exploring the multi-agent problem, and extending models to the stochasitc high-dimensional StarCraft space.
 
 There are many challenges to the StarCraft environment that marine 5v5 does not expose us to:
-- Exploration complexity: Foerster et al. measure that giving _no_ orders to the friendly controlled marines leads to a win rate of 84% (Foerster, 2017), this means that agents have a decent default policy to iteratively learn and improve from.
+- Exploration complexity: giving _no_ orders to the friendly controlled marines leads to a win rate of 84% (Foerster, 2017), this means that agents have a decent default policy to iteratively learn and improve from.
 - Asymmetry: One of the interesting AI challenges of StarCraft is the asymmetry in micro battles and races. There are 3 distint races with very different units and technologies available, leading to 9 different roles a completely general StarCraft AI has to learn (i.e. controlling {Terran, Zerg, Protos} vs enemy {Terran, Zerg, Protoss} is 9 distinct problems to solve with many common features).
 - Planning: In marine 5v5, short term gains are a close proxy for long term victory. Doing some extra damage to the opponent this frame is probably good. In both (Foerster et al., 2017) and (Usunier et al., 2016), the agents are rewarded for dealing more damage to the opponent than they take in a timestep. However, In StarCraft it's common to either:
   - Make short term sacrifices to realise a longer term advantage.
@@ -139,35 +140,32 @@ In this project we consider the Kiting problem as a exercise to:
 - Demonstrating the usefulness of the TensorFlow integration into BWAPI.
 - See if a relatively generic Deep Q-learning network can solve the kiting problem (that is, a network largely like that described in (Mnih et al, 2015).
 
-By modifying the experience replay buffer of a standard DQN to contain different sets for Wins vs Losses, and to have a shorter buffer size - we are able to achieve strong win rates (average 75%, in best examples 100%).
+By modifying the experience replay buffer of a standard DQN to contain different sets for Wins vs Losses, and to have a shorter buffer size - we are able to achieve strong win rates (average 75%, in best trials 100%).
 
-There is much research into experience and reward management, for an overview see Section 5 of (Pritzel et al., 2017). Our tweaks to the DQN replay buffer are rudimentary - future work would be to apply more advanced experience and reward management techniques to StarCraft micro battles.
+There is much research into experience and reward management for Reinforcement Learning, for an overview see Section 5 of (Pritzel et al., 2017). Our tweaks to the DQN replay buffer are rudimentary - future work would be to apply more advanced experience and reward management techniques to the StarCraft micro battles domain.
 
 
 #### Environment and Parameterization
 
 Our environment consits of a simplified 1v1 battle between a vulture and a zealot.
 
-- The hit points and damage of the units are modified such that the zealot kills the vulture in one attack, and the vulture kills the zealot in _n_ attacks - where _n_ is a parameter in ℤ<sup>+</sup>. For a particular _n_, we call the environment "_n_-kite". We chose n=2 going forward.
-
 - Zealot: the enemy unit controlled by the environment, ordered to attack directly at the vulture.
 - Vulture: the unit controlled by our agent.
-- Starting Positions: The two opposing units start close enough that if the vulture also simply attacks the zealot, the zealot will reach it and attack at melee range after the vulture fires one shot. The vulture must move to survive and win the battle.
+- The hit points and damage of the units are modified such that the zealot kills the vulture in one attack, and the vulture kills the zealot in _n_ attacks - where _n_ is a parameter in ℤ<sup>+</sup>. For a particular _n_, we call the environment "_n_-kite". We chose n=2 going forward.
+- Starting Positions: The two opposing units start close enough that if the vulture simply attacks the zealot, the zealot will reach it and attack at melee range after the vulture fires one shot. With n >= 2, the vulture must move to survive and ultimately win the battle.
+- The vulture has 20 seconds to win the battle, otherwise the zealot wins by default.
 
-- Our vulture has 20 seconds to win the battle, otherwise the zealot wins by default.
+Each timestep for the agent consists of 5 frames of the game.
 
 We parameterise the enivornment for input into the network as follows (see [agent.py](agent.py)):
 
-- Each timestep for the agent consists of 5 frames of the game.
-
-- For both units
-  - x and y positional coordinates (normalized in a bounding box)
+- For both units (all normalized to range [0,1])
+  - x and y positional coordinates (normalized within a bounding box)
   - current life of the unit
   - [cooldown](http://wiki.teamliquid.net/starcraft/Game_Speed#Cooldown) of the unit's attack, that is how long until it's attack is ready.
 
 - For the agent controlled vulture, we also pass a one-hot vector of what order type the unit is currently following from {Guard, Move, Attack}.
-- All parameters are normalized to the range [0,1]. x and y co-ordinates are normalized within a bounding box.
-- We pass the values of the above for the current & previous timesteps (so that the network can determine velocity of both units).
+- We pass the values of the above for the current & previous timesteps (so that the network can determine velocity of both units). The standard DQN passes 4 frames of the Atari game.
 
 The output of the agent is a one-hot vector representing 6 possible orders:
 - Give no order, so the vulture continues with its current order.
@@ -179,7 +177,7 @@ If the vulture is currently standing still, then it defaults to the "guard" orde
 
 #### Algorithm
 
-We use a deep neural network to approximate the optimal action-value function.
+We use a deep neural network to approximate the optimal action-value function:
 
 _Q(s,a)_ = reward for taking action _a_ in state _s_ plus all discounted future reward (so the best action a in a state s is the one such that Q(s,a) is maximum)
 
@@ -241,7 +239,7 @@ Hyperparameters
 | γ | future reward discount | 0.99 |
 | τ | target network update rate | 0.001 |
 
-We use the Adam gradient-descent algorithm for training the network ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)). Also see TensorFlow [tf.train.AdamOptimizer](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer).
+We use the Adam gradient-descent algorithm for training the network ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)) (also see TensorFlow [tf.train.AdamOptimizer](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer).
 
 
 #### Results
@@ -282,17 +280,17 @@ By storing experience from won and loss battles in separate buffers, and choosin
 
 The DQNs from (Mnih et al., 2015) and (Lillicrap et al., 2015) use an experience buffer of 10^6 time steps. We experimented with a buffer of size 10^5 but found the agent unable to develop a strong winning strategy.
 
-Consider that in our case, the successful strategies in battles won in random exploration are likely to involve a lot of chaotic action and large idle time periods of the agent not firing (e.g. ~50 timesteps), whereas the optimal strategy of a human expert is to fire as soon as there is enough distance from the enemy and the weapon is off of cooldown (e.g. finishing a battle in 10 timesteps).
+Successful strategies in battles won in random exploration are likely to involve a lot of chaotic action and large idle time periods of the agent not firing (e.g. ~50 timesteps), whereas the optimal strategy of a human expert is to fire as soon as there is enough distance from the enemy and the weapon is off of cooldown (e.g. finishing a battle in 10 timesteps).
 
-Intuitively, a shorter buffer (10k in our case) allows the agent to focus on learning recent successful wins, and learning recent mistakes made. This allows the agent to quickly learn to improve once it does find a successful strategy. It can try variants of that strategy, and with the short buffer then is likely to train the variants that failed a lot. So it is able to make small adjustments to a winning strategy until it is optimised.
+Intuitively, a shorter buffer (10^4 in our case) allows the agent to focus on learning recent successful wins, and learning recent mistakes made. This allows the agent to quickly learn to improve once it does find a successful strategy. It can try variants of that strategy, and with the short buffer then is likely to train the variants that failed a lot. So it is able to learn incremental improvements to a winning strategy to optimise it.
 
-We set the initial replay dataset to 10^5 timesteps, this generally resulted in about 4000 timesteps of positive reward - which would almost fill the Win Buffer of length 5000, which was a health start to then begin training from.
+We set the initial replay dataset to 10^5 timesteps, this generally resulted in about 4000 timesteps of positive reward - which would almost fill the Win Buffer of length 5000, a health start to then begin training from.
 
 It seems like a good choice of Win+Loss buffer size for this technique is one that holds ~100-500 episodes of data (each of our battles is ~10-50 timesteps).
 
 *Fixed ε=0.2 value*
 
-Other DQN examples in the literature anneal ε down from 1 to a small value, commonly 0.1. In our case there's not much point at exploring with high ε values once we have the initial random-action replay dataset collected - instead it's faster to just train the positive examples we have from the initial exploration, and then start learning what variants of those examples fail.
+Other DQN examples in the literature anneal ε down from 1 to a small value, commonly 0.1. In our case there's not much point at exploring with high ε values once we have the initial random-action replay dataset collected - instead it's faster to just train the positive examples we have from the initial exploration, and start learning straight away what variants of those examples fail.
 
 Conversely, ε=0.2 is a good choice for this particular environment since the vulture's weapon cools down in about 5 timesteps - and so it makes sense to try one deviation from the known strategy with this cadence. If ε is smaller then convergence to a winning strategy takes longer, if ε is larger then the bot struggles to develop a winning strategy at all as it's always losing from the chaos (The bot requires at least 10 timesteps to win, and can instantly lose if 1-2 of the actions in these timesteps are bad).
 
