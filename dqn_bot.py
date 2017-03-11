@@ -60,6 +60,8 @@ Act = Map(
   Boltzmann = 1, # Always use boltzmann action.
   Boltzmann_B = 2, # Use boltzmann action when exploring.
   Boltzmann_C = 3, # Use random action when exploring, otherwise use boltzmann action.
+
+  Greedy_Optimal = 4, # For 50% of episodes, use the best known values.
 )
 
 # For harder learning, increase these params:
@@ -406,8 +408,12 @@ class Bot:
             action = self.main_network.get_boltzmann_action(stage.inp)
 
         # When explore, use random action.
-        elif HP.ACTION_STRATEGY == Act.Greedy:
-          if np.random.rand(1) < self.explore:
+        elif HP.ACTION_STRATEGY == Act.Greedy or HP.ACTION_STRATEGY == Act.Greedy_Optimal:
+          do_explore = np.random.rand(1) < self.explore
+          if HP.ACTION_STRATEGY == Act.Greedy_Optimal:
+            # Only explore every 2nd battle.
+            do_explore = do_explore and self.war.total_battles % 2 == 0
+          if do_explore:
             log("Explore!")
             action = np.random.randint(0, agent.OUT_SHAPE)
           else:

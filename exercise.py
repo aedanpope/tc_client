@@ -205,9 +205,31 @@ if __name__ == '__main__':
           # Populate commands.
           unit_commands = bot.get_commands(tc.state, mode);
           commands = [[tc_client.CMD.command_unit_protected] + unit_command for unit_command in unit_commands]
-        log("commands = " + str(commands), 30)
+
+        # http://stackoverflow.com/questions/3762881/how-do-i-check-if-stdin-has-some-data
+        if select.select([sys.stdin,],[],[],0.0)[0]:
+          line = sys.stdin.readline()
+          print "Parsing UserInput '" + line + "'"
+          sc = Scanner(line)
+          if sc.has_next_int():
+            speed = sc.next_int()
+            print "Setting speed to " + str(speed)
+            my_logging.VERBOSITY = speed
+            commands.append([tc_client.CMD.set_speed, speed])
+          elif sc.has_next_word():
+            cmd = sc.next_word()
+            if cmd == "test" and sc.has_next_int():
+              test_battles = sc.next_int()
+              test_battles_fought = 0
+              test_battles_won = 0
+              mode = Mode.test
+              print "Manually testing for " + str(input_test_battles) + " battles"
+            else:
+              print "Invalid UserInput"
+          time.sleep(1)
 
         # Send the orders.
+        log("commands = " + str(commands), 30)
         tc.send(commands)
 
         if tc.state.battle_just_ended:
@@ -260,28 +282,6 @@ if __name__ == '__main__':
             print "\n\n\n**********************\n\n\n"
             print "starting test for " + str(test_battles) + " battles"
             time.sleep(1)
-
-        # http://stackoverflow.com/questions/3762881/how-do-i-check-if-stdin-has-some-data
-        if select.select([sys.stdin,],[],[],0.0)[0]:
-          line = sys.stdin.readline()
-          print "Parsing UserInput '" + line + "'"
-          sc = Scanner(line)
-          if sc.has_next_int():
-            speed = sc.next_int()
-            print "Setting speed to " + str(speed)
-            my_logging.VERBOSITY = speed
-            commands.append([tc_client.CMD.set_speed, speed])
-          elif sc.has_next_word():
-            cmd = sc.next_word()
-            if cmd == "test" and sc.has_next_int():
-              test_battles = sc.next_int()
-              test_battles_fought = 0
-              test_battles_won = 0
-              mode = Mode.test
-              print "Manually testing for " + str(input_test_battles) + " battles"
-            else:
-              print "Invalid UserInput"
-          time.sleep(1)
 
 
       bot.close()
