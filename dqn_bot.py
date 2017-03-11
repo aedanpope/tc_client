@@ -45,10 +45,6 @@ Mode = Map(
     test = 1, # Test the current optimal performance of the network.
 )
 
-class Settings:
-  mode = Mode.train
-  hyperparameters = None
-
 
 FRAMES_PER_ACTION = 1
 
@@ -104,7 +100,6 @@ def E_STEP():
 
 # TF Session
 SESS = None
-SETTINGS = Map({})
 TF_WRITER = None
 
 ## Generally, try and keep everything in the [-1,1] range.
@@ -365,9 +360,7 @@ class Bot:
     self.war = agent.War()
 
 
-  def get_commands(self, game_state, settings):
-    global SETTINGS
-    SETTINGS = settings
+  def get_commands(self, game_state, mode):
     commands = []
 
     self.frame += 1
@@ -391,7 +384,7 @@ class Bot:
       log("agent_q = " + str(agent_q))
       log("best_action = " + str(action))
 
-      if SETTINGS.mode == Mode.train:
+      if mode == Mode.train:
         if self.total_steps <= HP.PRE_TRAIN_STEPS:
           # Still pre-training, always random actions.
           action = np.random.randint(0, agent.OUT_SHAPE)
@@ -437,7 +430,7 @@ class Bot:
       # Calculate rewards, and add experiences to buffer.
       self.war.current_battle.trained = True
 
-      if SETTINGS.mode == Mode.train:
+      if mode == Mode.train:
         agent.write_battle_to_experience_buffer(self.war.current_battle, self.experience_buffer)
 
       reward = 1 if self.war.current_battle else -1
@@ -463,7 +456,7 @@ class Bot:
     if (not self.war.current_battle.is_end and
         self.total_steps > HP.PRE_TRAIN_STEPS and
         self.total_steps % (HP.UPDATE_FREQ) == 0 and
-        SETTINGS.mode == Mode.train and
+        mode == Mode.train and
         self.experience_buffer.enough_to_sample(HP.BATCH_SIZE)):
       # print "train WTF"
       DQNNetwork.train_batch(self.main_network, self.target_network, self.experience_buffer.sample(HP.BATCH_SIZE))

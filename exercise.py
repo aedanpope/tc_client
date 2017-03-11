@@ -1,6 +1,6 @@
 ### USAGE:
 # Run some experiment with trials:
-# p exercise.py -s 1 -k 2 -t 3 -hp "greedy={'ACTION_STRATEGY':Act.Greedy}, boltzmann={'ACTION_STRATEGY':Act.Boltzmann}" -f results/dnq_action_strategy_10k20k.txt
+# p exercise.py -s 1 -k 2 -t 3 -hp "greedy={'ACTION_STRATEGY':Act.Greedy}, boltzmann={'ACTION_STRATEGY':Act.Boltzmann}" -f results/dqn_action_strategy_10k20k.txt
 #
 # Quick run forever:
 # p exercise.py -s 1 -k 2 -t 1 -hp "foo={'PRE_TRAIN_STEPS':100, 'ANNEALING_STEPS':1000}" -v
@@ -28,12 +28,12 @@ import bot_q_learner_simple_a
 import policy_bot
 import advantage_bot
 import experience
-from dnq_bot import Settings
-from dnq_bot import Mode
+from dqn_bot import Settings
+from dqn_bot import Mode
 from map import Map
 import my_logging
 from my_logging import log
-import dnq_bot
+import dqn_bot
 from focus_fire_bot import FocusFireBot
 from scanner import Scanner
 import argparse
@@ -54,6 +54,8 @@ if __name__ == '__main__':
       help='Number of trials to run for each config')
   parser.add_argument('--test_battles', type=int, default=100,
       help='Number of test battles to run to evaluate a trial.')
+  parser.add_argument('--test_period', type=int, default=5000,
+      help='Number of timesteps between tests')
   parser.add_argument('-hp', '--hyperparameter_sets',
       help='Different sets of hyperparameters to evaluate num --trials times.')
   parser.add_argument('-v', '--forever', default=False, action='store_true',
@@ -69,9 +71,7 @@ if __name__ == '__main__':
   print 'Speed = ', str(args.speed)
   speed = args.speed
 
-  settings = Settings()
   my_logging.VERBOSITY = speed
-  settings.mode = Mode.train
 
 
   # bot = FocusFireBot()
@@ -131,19 +131,19 @@ if __name__ == '__main__':
 
   hyperparameter_sets = Map({'default_params': {}})
   if args.hyperparameter_sets:
-    hyperparameter_sets = dnq_bot.parse_hyperparameter_sets(args.hyperparameter_sets)
+    hyperparameter_sets = dqn_bot.parse_hyperparameter_sets(args.hyperparameter_sets)
     # eval("Map("+args.hyperparameter_sets+")")
   print "hyperparameter_sets = " + str(hyperparameter_sets)
   print ""
 
   if out_file:
-    print >>out_file, "default hyperparameters: " + str(dnq_bot.HP)
-  print "default hyperparameters: " + str(dnq_bot.HP)
+    print >>out_file, "default hyperparameters: " + str(dqn_bot.HP)
+  print "default hyperparameters: " + str(dqn_bot.HP)
 
   first_keys = set(hyperparameter_sets.values()[0].keys())
   for (case,hyperparameters) in hyperparameter_sets.items():
     # Just check they all parse.
-    dnq_bot.process_hyperparameters(hyperparameters)
+    dqn_bot.process_hyperparameters(hyperparameters)
     if (first_keys != set(hyperparameters.keys())):
       raise Exception("not all hyperparameter sets have the same keys. All keys must be specified so that order doesn't matter.")
 
@@ -156,11 +156,11 @@ if __name__ == '__main__':
     print "case: " + str(case)
     print "hyperparameters: " + str(hyperparameters)
     # Process now so they apply to num trainging steps.
-    dnq_bot.process_hyperparameters(hyperparameters)
+    dqn_bot.process_hyperparameters(hyperparameters)
 
     # Make sure each Trial gets the same number of steps to train, not battles.
     # So that sneaky agents don't get extra training time except an epsilon in the last training battle.
-    training_steps = dnq_bot.HP.PRE_TRAIN_STEPS + dnq_bot.HP.ANNEALING_STEPS + dnq_bot.HP.POST_ANNEALING_STEPS
+    training_steps = dqn_bot.HP.PRE_TRAIN_STEPS + dqn_bot.HP.ANNEALING_STEPS + dqn_bot.HP.POST_ANNEALING_STEPS
     if (args.forever):
       training_steps = 99999999
     test_battles = args.test_battles
@@ -170,16 +170,17 @@ if __name__ == '__main__':
         print "ExperienceRecordingBot"
         bot = experience.ExperienceRecordingBot(args.record)
       else:
-        print "dnq_bot.Bot"
-        bot = dnq_bot.Bot(hyperparameters, args.experience)
+        print "dqn_bot.Bot"
+        bot = dqn_bot.Bot(hyperparameters, args.experience)
 
-      settings.mode = Mode.train
+      mode = Mode.train
       steps = 0
       train_battles_fought = 0
       train_battles_won = 0
       test_battles_fought = 0
       test_battles_won = 0
       input_test_battles = None
+      last_test_start = -1
       while steps < training_steps or test_battles_fought < test_battles:
         update = tc.receive()
         commands = []
@@ -190,7 +191,7 @@ if __name__ == '__main__':
 
           won = int(tc.state.battle_won)
 
-          if (settings.mode == Mode.train):
+          if (mode == Mode.train):
             train_battles_fought += 1
             train_battles_won += won
           else:
@@ -206,10 +207,15 @@ if __name__ == '__main__':
               test_battles_fought = 0
               test_battles_won = 0
               time.sleep(10)
-              settings.mode = Mode.train
+              mode = Mode.train
 
-          if (steps >= training_steps):
-            settings.mode = Mode.test
+            if (steps >= training_steps):
+              mode = Mode.test
+
+            if ((steps - last_test_start) / args.test_period >= 1):
+              last_test_start = steps
+              args.test_period
+
 
           print "case = " + str(case)
           print "trial = " + str(trial)
@@ -217,7 +223,7 @@ if __name__ == '__main__':
           print "train_battles_won = " + str(train_battles_won)
           print "test_battles_fought = " + str(test_battles_fought) + "/" + str(test_battles)
           print "test_battles_won = " + str(test_battles_won)
-          print "settings.mode = " + str(settings.mode)
+          print "mode = " + str(mode)
           print "steps = " + str(steps) + "/" + str(training_steps)
 
         # Don't send repeated frames of the same ended battle state.
@@ -244,7 +250,7 @@ if __name__ == '__main__':
               input_test_battles = sc.next_int()
               test_battles_fought = 0
               test_battles_won = 0
-              settings.mode = Mode.test
+              mode = Mode.test
               print "Testing for " + str(input_test_battles) + " battles"
             else:
               print "Invalid UserInput"
