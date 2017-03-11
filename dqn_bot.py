@@ -373,7 +373,6 @@ class Bot:
     stage.inp = agent.battle_to_input(self.war.current_battle)
 
     if not self.war.current_battle.is_end:
-      self.total_steps += 1
 
       # Figure out what action to take next.
       log("inp = " + str(stage.inp))
@@ -385,6 +384,7 @@ class Bot:
       log("best_action = " + str(action))
 
       if mode == Mode.train:
+        self.total_steps += 1
         if self.total_steps <= HP.PRE_TRAIN_STEPS:
           # Still pre-training, always random actions.
           action = np.random.randint(0, agent.OUT_SHAPE)

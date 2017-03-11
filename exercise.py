@@ -28,7 +28,6 @@ import bot_q_learner_simple_a
 import policy_bot
 import advantage_bot
 import experience
-from dqn_bot import Settings
 from dqn_bot import Mode
 from map import Map
 import my_logging
@@ -40,6 +39,12 @@ import argparse
 
 
 out_file = None
+
+def output(s):
+  print s
+  if out_file:
+    print >>out_file, s
+    file.flush(out_file)
 
 
 if __name__ == '__main__':
@@ -160,10 +165,9 @@ if __name__ == '__main__':
 
     # Make sure each Trial gets the same number of steps to train, not battles.
     # So that sneaky agents don't get extra training time except an epsilon in the last training battle.
-    training_steps = dqn_bot.HP.PRE_TRAIN_STEPS + dqn_bot.HP.ANNEALING_STEPS + dqn_bot.HP.POST_ANNEALING_STEPS
+    train_for_steps = dqn_bot.HP.PRE_TRAIN_STEPS + dqn_bot.HP.ANNEALING_STEPS + dqn_bot.HP.POST_ANNEALING_STEPS
     if (args.forever):
-      training_steps = 99999999
-    test_battles = args.test_battles
+      train_for_steps = 99999999
 
     for trial in range(0,args.trials):
       if args.record:
@@ -173,17 +177,38 @@ if __name__ == '__main__':
         print "dqn_bot.Bot"
         bot = dqn_bot.Bot(hyperparameters, args.experience)
 
-      mode = Mode.train
-      steps = 0
+
+      output("START case: " + str(case) + ", " + "trial: " + str(trial))
+
+      steps_trained = 0
       train_battles_fought = 0
       train_battles_won = 0
+
       test_battles_fought = 0
       test_battles_won = 0
-      input_test_battles = None
-      last_test_start = -1
-      while steps < training_steps or test_battles_fought < test_battles:
+      test_battles = None
+      last_test_result = None
+
+      # Start with a test:
+      step_last_test_start = 0
+      mode = Mode.test
+      test_battles = args.test_battles
+      # Add a little to check, so that we can finish the last training battle.
+      while steps_trained <= train_for_steps+100 or (mode == Mode.test and test_battles_fought < test_battles):
         update = tc.receive()
         commands = []
+
+        # Don't send repeated frames of the same ended battle state.
+        if not tc.state.battle_ended or tc.state.battle_just_ended:
+          if not tc.state.battle_ended and mode == Mode.train:
+            steps_trained += 1
+          # Populate commands.
+          unit_commands = bot.get_commands(tc.state, mode);
+          commands = [[tc_client.CMD.command_unit_protected] + unit_command for unit_command in unit_commands]
+        log("commands = " + str(commands), 30)
+
+        # Send the orders.
+        tc.send(commands)
 
         if tc.state.battle_just_ended:
           print "\nBATTLE ENDED"
@@ -197,42 +222,44 @@ if __name__ == '__main__':
           else:
             test_battles_fought += 1
             test_battles_won += won
-
-          if input_test_battles is not None:
-            input_test_battles -= 1
-            if input_test_battles == 0:
-              input_test_battles = None
-              print "\nInput Test Finished."
-              print "Results = " + str(test_battles_won) + "/" + str(test_battles_fought)
+            test_battles -= 1
+            if test_battles == 0:
+              test_battles = None
+              print "\n\n\n**********************\n\n\n"
+              output("Test Finished")
+              output("steps_trained = " + str(steps_trained))
+              last_test_result = float(test_battles_won) / test_battles_fought
+              output("Results = " + str(test_battles_won) + "/" + str(test_battles_fought) +
+                     " = " + str(last_test_result))
               test_battles_fought = 0
               test_battles_won = 0
-              time.sleep(10)
+              time.sleep(1)
               mode = Mode.train
-
-            if (steps >= training_steps):
-              mode = Mode.test
-
-            if ((steps - last_test_start) / args.test_period >= 1):
-              last_test_start = steps
-              args.test_period
-
+              if (steps_trained >= train_for_steps):
+                # Finished training and testing, finished with this trial.
+                break
 
           print "case = " + str(case)
           print "trial = " + str(trial)
           print "train_battles_fought = " + str(train_battles_fought)
           print "train_battles_won = " + str(train_battles_won)
-          print "test_battles_fought = " + str(test_battles_fought) + "/" + str(test_battles)
+          print "step_last_test_start = " + str(step_last_test_start)
+          print "last_test_results = " + str(last_test_result)
+          print "test_battles_fought = " + str(test_battles_fought)
           print "test_battles_won = " + str(test_battles_won)
-          print "mode = " + str(mode)
-          print "steps = " + str(steps) + "/" + str(training_steps)
+          print "current_mode = " + str(mode)
+          print "steps_trained = " + str(steps_trained) + "/" + str(train_for_steps)
+          print "check_for_test = " + str((steps_trained - step_last_test_start) / args.test_period)
 
-        # Don't send repeated frames of the same ended battle state.
-        if not tc.state.battle_ended or tc.state.battle_just_ended:
-          if not tc.state.battle_ended and input_test_battles is None:
-            steps += 1
-          # Populate commands.
-          unit_commands = bot.get_commands(tc.state, settings);
-          commands = [[tc_client.CMD.command_unit_protected] + unit_command for unit_command in unit_commands]
+          # Start testing if we've finished training, or periodically.
+          if mode == Mode.train and (
+             steps_trained >= train_for_steps or ((steps_trained - step_last_test_start) / args.test_period >= 1)):
+            mode = Mode.test
+            step_last_test_start = steps_trained
+            test_battles = args.test_battles
+            print "\n\n\n**********************\n\n\n"
+            print "starting test for " + str(test_battles) + " battles"
+            time.sleep(1)
 
         # http://stackoverflow.com/questions/3762881/how-do-i-check-if-stdin-has-some-data
         if select.select([sys.stdin,],[],[],0.0)[0]:
@@ -247,39 +274,18 @@ if __name__ == '__main__':
           elif sc.has_next_word():
             cmd = sc.next_word()
             if cmd == "test" and sc.has_next_int():
-              input_test_battles = sc.next_int()
+              test_battles = sc.next_int()
               test_battles_fought = 0
               test_battles_won = 0
               mode = Mode.test
-              print "Testing for " + str(input_test_battles) + " battles"
+              print "Manually testing for " + str(input_test_battles) + " battles"
             else:
               print "Invalid UserInput"
           time.sleep(1)
 
-        log("commands = " + str(commands), 30)
-
-        # Send the orders.
-        tc.send(commands)
 
       bot.close()
-      print "trial " + str(trial)
-      print "train win rate: " + str(float(train_battles_won) / train_battles_fought)
-      if test_battles_fought > 0:
-        print "test win rate: " + str(float(test_battles_won) / test_battles_fought)
-      else:
-        print "test win rate: NaN"
-
-      print ""
-      print ""
-      print "**********************"
-      print ""
-      print ""
-
-      if out_file:
-        print >>out_file, "trial " + str(trial)
-        print >>out_file, "train win rate: " + str(float(train_battles_won) / train_battles_fought)
-        if test_battles_fought > 0:
-          print >>out_file, "test win rate: " + str(float(test_battles_won) / test_battles_fought)
-      else:
-        print "test win rate: NaN"
-        file.flush(out_file)
+      output("END case: " + str(case) + ", " + "trial: " + str(trial))
+      output("train win rate: " + str(float(train_battles_won) / train_battles_fought))
+      output("test win rate: " + str(last_test_result))
+      print "\n\n\n**********************\n\n\n"
