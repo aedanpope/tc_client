@@ -137,7 +137,11 @@ There has been [some previous research](https://scholar.google.co.uk/scholar?hl=
 
 In this project we consider the Kiting problem as a exercise to:
 - Demonstrating the usefulness of the TensorFlow integration into BWAPI.
-- See if a generic Deep Q-learning network can solve the kiting problem (that is, a network largely like that described in (Mnih et al, 2015).
+- See if a relatively generic Deep Q-learning network can solve the kiting problem (that is, a network largely like that described in (Mnih et al, 2015).
+
+By modifying the experience replay buffer of a standard DQN to contain different sets for Wins vs Losses, and to have a shorter buffer size - we are able to achieve strong win rates (average 75%, in best examples 100%).
+
+There is much research into experience and reward management, for an overview see Section 5 of (Pritzel et al., 2017). Our tweaks to the DQN replay buffer are rudimentary - future work would be to apply more advanced experience and reward management techniques to StarCraft micro battles.
 
 
 #### Environment and Parameterization
@@ -306,11 +310,15 @@ Mean that our algorithm is able to repeatably and successfully solve a problem w
 
 #### Future Work
 
-- See if we can extend the algorithm to solve a harder kiting battle. Recall that _n_ is the environment parameter of the number of hits that the vulture requires to kill the zealot (and the zealot always kills the vulture in one hit). Perhaps the same algorithm can solve 3-kite or 4-kite. It's unlikely it will succeed for high values of n, as the amount of random exploration required to fill the win buffer will exponentially increase (it takes ~5 timesteps to fire once at the zealot and dance back, so the number of good random choices required for victory is O(n), and the probability of making enough good choices to win is then O(p^n) for some probability p < 1). Maybe we can learn the beginnings of a successful strategy for, say n=4, by training an agent against n=2 and then slowly introducing n=3 and n=4 episodes into the conflict. Or by evenly cycling between battles of n=2,3,4 (only resulting in linear growth of the amount of initial exploration required to fill the win buffer).
-
 - Find other 1%-random-success problems and see if these modifications can solve problems of this nature in general.
 
 - Combine this work with (Foerster et al., 2017)'s on multi-unit micro battles in StarCraft to see if we can win multi-unit kiting battles (e.g. 5 Vultures vs. 5 Zealots).
+
+- Apply more advanced experience and reward management algorithms to StarCraft micro battles, for example the NEC algorithm (Pritzel et al., 2017).
+
+- See if we can extend the algorithm to solve a harder kiting battle. Recall that _n_ is the environment parameter of the number of hits that the vulture requires to kill the zealot (and the zealot always kills the vulture in one hit). Perhaps the same algorithm can solve 3-kite or 4-kite. It's unlikely it will succeed for high values of n, as the amount of random exploration required to fill the win buffer will exponentially increase (it takes ~5 timesteps to fire once at the zealot and dance back, so the number of good random choices required for victory is O(n), and the probability of making enough good choices to win is then O(p^n) for some probability p < 1). Maybe we can learn the beginnings of a successful strategy for, say n=4, by training an agent against n=2 and then slowly introducing n=3 and n=4 episodes into the conflict. Or by evenly cycling between battles of n=2,3,4 (only resulting in linear growth of the amount of initial exploration required to fill the win buffer).
+
+- Find an incremental reward policy that solves this scenario. Using absolute reward for win/loss allows the algorithm to find the best solution, but won't generalize to harder battles (e.g. 5v5 vultures vs zealots) where there will be no chance of randomly generating a winning solution. Need a good heuristic. Maybe experiment with the reward decay, train a network to estimate the value of given states, or try Dueling DQN (Wang et al., 2015)
 
 
 #### Implementation
@@ -333,6 +341,8 @@ Mnih, Kavukcuoglu, Silver, Rusu, Veness, Bellemare, Graves, Riedmiller, Fidjelan
 
 Pritzel, Uria, Srinivasan, Puigdomènech, Vinyals, Hassabis, Wierstra, and Charles Blundell. _Neural Episodic Control_. arXiv preprint [arXiv:1703.01988](https://arxiv.org/abs/1703.01988), 2017.
 
+Sukhbaatar, Szlam, Synnaeve, Chintala, and Fergus. _MazeBase: A Sandbox for Learning from Games_. arXiv preprint [arXiv:1511.07401](https://arxiv.org/abs/1511.07401), 2016.
+
 Usunier, Synnaeve, Lin, and Chintala. _Episodic Exploration for Deep Deterministic Policies: An Application to StarCraft Micromanagement Tasks_. arXiv preprint [arXiv:1609.02993](https://arxiv.org/abs/1609.02993), 2016.
 
-Sukhbaatar, Szlam, Synnaeve, Chintala, and Fergus. _MazeBase: A Sandbox for Learning from Games_. arXiv preprint [arXiv:1511.07401](https://arxiv.org/abs/1511.07401), 2016.
+Wang, Schaul, Hessel, Hasselt, Lanctot, Freitas. _Dueling Network Architectures for Deep Reinforcement Learning_. arXiv preprint [arXiv:1511.06581](https://arxiv.org/abs/1511.06581), 2015.

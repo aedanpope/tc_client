@@ -1,7 +1,5 @@
 To do:
 
-- Read https://arxiv.org/abs/1703.01988
-
 randomize starting location
 
 build a single map with kite 2/3/4 in it,

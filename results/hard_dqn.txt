@@ -17,3 +17,237 @@ Results = 0/100 = 0.0
 Test Finished
 steps_trained = 5005
 Results = 0/100 = 0.0
+Test Finished
+steps_trained = 10008
+Results = 38/100 = 0.38
+Test Finished
+steps_trained = 15008
+Results = 21/100 = 0.21
+Test Finished
+steps_trained = 20053
+Results = 35/100 = 0.35
+Test Finished
+steps_trained = 25054
+Results = 32/100 = 0.32
+Test Finished
+steps_trained = 30003
+Results = 19/100 = 0.19
+END case: foo, trial: 0
+train win rate: 0.192475463468
+test win rate: 0.19
+START case: foo, trial: 1
+Test Finished
+steps_trained = 0
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 5000
+Results = 1/100 = 0.01
+Test Finished
+steps_trained = 10014
+Results = 27/100 = 0.27
+Test Finished
+steps_trained = 15032
+Results = 32/100 = 0.32
+Test Finished
+steps_trained = 20079
+Results = 3/100 = 0.03
+Test Finished
+steps_trained = 25100
+Results = 86/100 = 0.86
+Test Finished
+steps_trained = 30027
+Results = 0/100 = 0.0
+END case: foo, trial: 1
+train win rate: 0.148325358852
+test win rate: 0.0
+START case: foo, trial: 2
+Test Finished
+steps_trained = 0
+Results = 8/100 = 0.08
+Test Finished
+steps_trained = 5013
+Results = 36/100 = 0.36
+Test Finished
+steps_trained = 10022
+Results = 100/100 = 1.0
+Test Finished
+steps_trained = 15039
+Results = 72/100 = 0.72
+Test Finished
+steps_trained = 20048
+Results = 85/100 = 0.85
+Test Finished
+steps_trained = 25077
+Results = 70/100 = 0.7
+Test Finished
+steps_trained = 30030
+Results = 70/100 = 0.7
+END case: foo, trial: 2
+train win rate: 0.301854974705
+test win rate: 0.7
+START case: foo, trial: 3
+Test Finished
+steps_trained = 0
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 5011
+Results = 3/100 = 0.03
+Test Finished
+steps_trained = 10016
+Results = 52/100 = 0.52
+Test Finished
+steps_trained = 15023
+Results = 20/100 = 0.2
+Test Finished
+steps_trained = 20029
+Results = 33/100 = 0.33
+Test Finished
+steps_trained = 25039
+Results = 21/100 = 0.21
+Test Finished
+steps_trained = 30039
+Results = 21/100 = 0.21
+END case: foo, trial: 3
+train win rate: 0.22288795686
+test win rate: 0.21
+START case: foo, trial: 4
+Test Finished
+steps_trained = 0
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 5013
+Results = 77/100 = 0.77
+Test Finished
+steps_trained = 10018
+Results = 16/100 = 0.16
+Test Finished
+steps_trained = 15028
+Results = 80/100 = 0.8
+Test Finished
+steps_trained = 20074
+Results = 27/100 = 0.27
+Test Finished
+steps_trained = 25097
+Results = 1/100 = 0.01
+Test Finished
+steps_trained = 30018
+Results = 63/100 = 0.63
+END case: foo, trial: 4
+train win rate: 0.256853396901
+test win rate: 0.63
+START case: foo, trial: 5
+Test Finished
+steps_trained = 0
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 5005
+Results = 87/100 = 0.87
+Test Finished
+steps_trained = 10022
+Results = 60/100 = 0.6
+Test Finished
+steps_trained = 15029
+Results = 77/100 = 0.77
+Test Finished
+steps_trained = 20043
+Results = 69/100 = 0.69
+Test Finished
+steps_trained = 25068
+Results = 64/100 = 0.64
+Test Finished
+steps_trained = 30006
+Results = 0/100 = 0.0
+END case: foo, trial: 5
+train win rate: 0.234620024125
+test win rate: 0.0
+START case: foo, trial: 6
+Test Finished
+steps_trained = 0
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 5002
+Results = 38/100 = 0.38
+Test Finished
+steps_trained = 10002
+Results = 35/100 = 0.35
+Test Finished
+steps_trained = 15014
+Results = 7/100 = 0.07
+Test Finished
+steps_trained = 20045
+Results = 95/100 = 0.95
+Test Finished
+steps_trained = 25049
+Results = 71/100 = 0.71
+Test Finished
+steps_trained = 30005
+Results = 74/100 = 0.74
+END case: foo, trial: 6
+train win rate: 0.242408098029
+test win rate: 0.74
+START case: foo, trial: 7
+Test Finished
+steps_trained = 0
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 5009
+Results = 11/100 = 0.11
+Test Finished
+steps_trained = 10013
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 15016
+Results = 12/100 = 0.12
+Test Finished
+steps_trained = 20056
+Results = 9/100 = 0.09
+Test Finished
+steps_trained = 25086
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 30014
+Results = 31/100 = 0.31
+END case: foo, trial: 7
+train win rate: 0.159709618875
+test win rate: 0.31
+START case: foo, trial: 8
+Test Finished
+steps_trained = 0
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 5019
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 10024
+Results = 11/100 = 0.11
+Test Finished
+steps_trained = 15027
+Results = 1/100 = 0.01
+Test Finished
+steps_trained = 20041
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 25053
+Results = 41/100 = 0.41
+Test Finished
+steps_trained = 30047
+Results = 75/100 = 0.75
+END case: foo, trial: 8
+train win rate: 0.237831858407
+test win rate: 0.75
+START case: foo, trial: 9
+Test Finished
+steps_trained = 0
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 5013
+Results = 62/100 = 0.62
+Test Finished
+steps_trained = 10014
+Results = 43/100 = 0.43
+Test Finished
+steps_trained = 15014
+Results = 80/100 = 0.8
+Test Finished
+steps_trained = 20021
+Results = 96/100 = 0.96
