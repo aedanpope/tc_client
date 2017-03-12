@@ -270,7 +270,7 @@ The results are skewed by 2  trials which were not able to find successful strat
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0.94 | 0.95 | 0.63 | 0 | 0.96 | 0.95 | 0.98 | 0.88 | 0 | 0.9 |
 
-Video of a successful agent: https://www.youtube.com/watch?v=UHgK2RxLCKM
+Video of a successful agent, demonstrating the kiting technique used by human experts: https://www.youtube.com/watch?v=UHgK2RxLCKM
 
 
 #### Conclusions
