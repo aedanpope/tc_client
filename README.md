@@ -14,10 +14,10 @@
       * [Abstract](#abstract)
       * [Introduction](#introduction)
       * [Environment and Parameterization](#environment-and-parameterization)
+      * [Reward Policy](#reward-policy)
       * [Algorithm](#algorithm)
       * [Results](#results)
-         * [Rewards](#rewards)
-         * [Conclusions](#conclusions)
+      * [Conclusions](#conclusions)
       * [Future Work](#future-work)
       * [Implementation](#implementation)
       * [References](#references)
@@ -172,6 +172,13 @@ The output of the agent is a one-hot vector representing 6 possible orders:
 If the vulture is currently standing still, then it defaults to the "guard" order, meaning that it will attack and pursue any enemy that comes within range.
 
 
+#### Reward Policy
+
+We give the agent a binary +1 or -1 reward at the end of the battle depending on if it wins or loses. This is the only reward the agent gets, so it is encouraged to plan ahead for long term reward.
+
+Unlike (Foerster et al., 2017) and (Usunier et al., 2016), we do not give the agent any partial rewards for dealing more damage to the opponent than they take in a given timestep. We originally experimented with this, but found that the agent would get stuck in greedy local optima, where it would fire at the zealot but not run away in time - happy with the small reward it had incurred. Attempting to explicitly reward incurring damage in one timestep and not suffering damage within a set number of future timesteps trained the agent to be too risk adverse, not moving in to kill off the opponent.
+
+
 #### Algorithm
 
 We use a deep neural network to approximate the optimal action-value function:
@@ -264,14 +271,7 @@ The results are skewed by 2  trials which were not able to find successful strat
 Video of a successful agent: https://www.youtube.com/watch?v=UHgK2RxLCKM
 
 
-##### Rewards
-
-We give the agent a binary +1 or -1 reward at the end of the battle depending on if it wins or loses. This is the only reward the agent gets, so it is encouraged to plan ahead for long term reward.
-
-Unlike (Foerster et al., 2017) and (Usunier et al., 2016), we do not give the agent any partial rewards for dealing more damage to the opponent than they take in a given timestep. We originally experimented with this, but found that the agent would get stuck in greedy local optima, where it would fire at the zealot but not run away in time - happy with the small reward it had incurred. Attempting to explicitly reward incurring damage in one timestep and not suffering damage within a set number of future timesteps trained the agent to be too risk adverse, not moving in to kill off the opponent.
-
-
-##### Conclusions
+#### Conclusions
 
 Randomly choosing actions from the 6 possible commands results in a win-rate of ~1.1%. This means that the traditional DQN with a single experience buffer is training examples with -ve reward the vast majority of the time. In our experiments with this strategy, the agents would never learn how to win - just how to delay defeat for as long as possible.
 
