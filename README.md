@@ -94,6 +94,7 @@ For example, [Juliani's Q-Learing Part 0 blog post](https://medium.com/emergent-
 
 ### 3. A DQN for solving a difficult binary-success problem in StarCraft (that is, a DQN for a kiting micro-battle).
 
+
 #### Abstract
 
 Recent research into Reinforcement learning has used _micromanagement battles_ in the the real-time strategy game StarCraft as benchmarks for reinforcement learning algorithms.
@@ -102,11 +103,7 @@ In this research, the battles have been between symmetrical forces. Giving no or
 
 When pitting a fast ranged unit vs. a slow melee one in StarCraft, the optimal control strategy for the ranged unit is to _Kite_ the melee one (fire from range, dance backwards before the melee unit can attack, and fire again). Giving no orders in this Battle to the ranged unit is a guaranteed loss.
 
-We construct a simplified battle where kiting is the optimal stragey, and where randomly generating orders from a small but sufficient set results in nominal win rates (~1%). Then we show that a relatively generic DQN is able to learn to solve this battle with two key modifications:
-
-- A much shorter experience buffer size of recent actions to re-train.
-- Separate experience buffers for experience in battles which were won or lost.
-
+We construct a simplified battle where kiting is the optimal stragey, and where randomly generating orders from a small but sufficient set results in nominal win rates (~1%). Then we show that a relatively generic DQN is able to solve this battle with one key modifications: separate experience buffers for experience in battles which were won or lost.
 
 Human Expert winning the micro battle: https://www.youtube.com/watch?v=PnEhLxpL29U
 
@@ -138,9 +135,10 @@ There has been [some previous research](https://scholar.google.co.uk/scholar?hl=
 
 In this project we consider the Kiting problem as a exercise to:
 - Demonstrating the usefulness of the TensorFlow integration into BWAPI.
-- See if a relatively generic Deep Q-learning network can solve the kiting problem (that is, a network largely like that described in (Mnih et al, 2015).
+- See if a relatively generic Deep Q-learning network can solve the kiting problem (
+a network largely like that described in (Mnih et al, 2015)).
 
-By modifying the experience replay buffer of a standard DQN to contain different sets for Wins vs Losses, and to have a shorter buffer size - we are able to achieve strong win rates (average 75%, in best trials 100%).
+By modifying the experience replay buffer of a standard DQN to contain different sets for Wins vs Losses - we are able to achieve strong win rates (average 92% after 50k timesteps).
 
 There is much research into experience and reward management for Reinforcement Learning, for an overview see Section 5 of (Pritzel et al., 2017). Our tweaks to the DQN replay buffer are rudimentary - future work would be to apply more advanced experience and reward management techniques to the StarCraft micro battles domain.
 
@@ -188,7 +186,7 @@ Network Topology:
 - 6 output nodes, activation function TanH
 
 
-Pseudocode:
+Algorithm:
 
 ```
 Initialize win experience buffer W to capacity N_w
@@ -203,8 +201,8 @@ For battle 1, ... do
     if (battle <= K)
       select random action a
     else
-      with probability ε
-        select a = random choice of a_i with probability_weight softmax(Q(s, a_i, θ)/0.5)
+      if (battle % 2 == 1 and random(0,1) <  ε)
+        select a = random choice
       otherwise select a = argmax_a_i Q(s, a_i, θ)
     execute a on battle
     read state s1 from battle
@@ -231,12 +229,12 @@ Hyperparameters
 | Variable   | Hyperparameter | value |
 |---- | ------------------- | --- |
 | T   | training batch size | 100 |
-| λ | learning rate | 0.01 |
-| N<sub>W</sub> | win experience buffer size | 5000 |
-| N<sub>L</sub> | lose experience buffer size | 5000 |
+| N<sub>W</sub> | win experience buffer size | 50000 |
+| N<sub>L</sub> | lose experience buffer size | 50000 |
 | K | replay start size | 100000 |
-| ε | exploration rate | 0.2 |
+| ε | exploration rate | 0.1 |
 | γ | future reward discount | 0.99 |
+| λ | learning rate | 0.0001 |
 | τ | target network update rate | 0.001 |
 
 We use the Adam gradient-descent algorithm for training the network ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)) (also see TensorFlow [tf.train.AdamOptimizer](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer).
@@ -244,21 +242,27 @@ We use the Adam gradient-descent algorithm for training the network ([Kingma et.
 
 #### Results
 
-After pre-training for 100k timesteps, the network is generally able to learn an optimal strategy in 20-25k steps:
-
-https://www.youtube.com/watch?v=UHgK2RxLCKM
-
-
-Win rates by testing the best guess of the network from 100 battles * 5 trials after a given number of training steps:
+The network is generally able to learn an optimal strategy in 50k timesteps. Win rates by testing the best guess of the network from 100 battles * 10 trials after a given number of training steps:
 
 | Training Steps | Win rate |
 | --- | --- |
-| 5k | 0.405 |
-| 10k | 0.362 |
-| 15k | 0.334 |
-| 20k | 0.434 |
+| 0k | 0 |
+| 5k | 0.167 |
+| 10k | 0.688 |
+| 15k | 0.728 |
+| 20k | 0.306 |
+| 25k | 0.343 |
+| 30k | 0.626 |
+| 35k | 0.633 |
+| 40k | 0.699 |
+| 45k | 0.653 |
+| 50k | 0.719 |
 
-TODO run this experiment again with more trials, results are super noisy wiht occasional zeros 20k = (0.27, 0.7, 0.0, 0.69, 0.51) but the sample we recorded (in a single trial) for the video was 1.0 here.
+The results are skewed by 2  trials which were not able to find successful strategies. The win rates for the 10 trials after 50k steps are:
+
+| 0.94 | 0.95 | 0.63 | 0 | 0.96 | 0.95 | 0.98 | 0.88 | 0 | 0.9 |
+
+Video of a successful agent: https://www.youtube.com/watch?v=UHgK2RxLCKM
 
 
 ##### Rewards
@@ -268,42 +272,11 @@ We give the agent a binary +1 or -1 reward at the end of the battle depending on
 Unlike (Foerster et al., 2017) and (Usunier et al., 2016), we do not give the agent any partial rewards for dealing more damage to the opponent than they take in a given timestep. We originally experimented with this, but found that the agent would get stuck in greedy local optima, where it would fire at the zealot but not run away in time - happy with the small reward it had incurred. Attempting to explicitly reward incurring damage in one timestep and not suffering damage within a set number of future timesteps trained the agent to be too risk adverse, not moving in to kill off the opponent.
 
 
-##### Experience Buffers and Exploration
+##### Conclusions
 
-Randomly choosing actions from the 6 possible commands results in a win-rate of ~1.1%. This means that the traditional DQN with a single experience buffer is training examples with -ve reward the vast majority of the time. In experiments with this strategy, the agents would never learn how to win - just how to delay defeat for as long as possible.
+Randomly choosing actions from the 6 possible commands results in a win-rate of ~1.1%. This means that the traditional DQN with a single experience buffer is training examples with -ve reward the vast majority of the time. In our experiments with this strategy, the agents would never learn how to win - just how to delay defeat for as long as possible.
 
-*Two Buffers*
-
-By storing experience from won and loss battles in separate buffers, and choosing half of the training sample from each, we ensure that the agent is able to learn some positive behaviours as well as negative.
-
-*Shorter experience buffer*
-
-The DQNs from (Mnih et al., 2015) and (Lillicrap et al., 2015) use an experience buffer of 10^6 time steps. We experimented with a buffer of size 10^5 but found the agent unable to develop a strong winning strategy.
-
-Successful strategies in battles won in random exploration are likely to involve a lot of chaotic action and large idle time periods of the agent not firing (e.g. ~50 timesteps), whereas the optimal strategy of a human expert is to fire as soon as there is enough distance from the enemy and the weapon is off of cooldown (e.g. finishing a battle in 10 timesteps).
-
-Intuitively, a shorter buffer (10^4 in our case) allows the agent to focus on learning recent successful wins, and learning recent mistakes made. This allows the agent to quickly learn to improve once it does find a successful strategy. It can try variants of that strategy, and with the short buffer then is likely to train the variants that failed a lot. So it is able to learn incremental improvements to a winning strategy to optimise it.
-
-We set the initial replay dataset to 10^5 timesteps, this generally resulted in about 4000 timesteps of positive reward - which would almost fill the Win Buffer of length 5000, a health start to then begin training from.
-
-It seems like a good choice of Win+Loss buffer size for this technique is one that holds ~100-500 episodes of data (each of our battles is ~10-50 timesteps).
-
-*Fixed ε=0.2 value*
-
-Other DQN examples in the literature anneal ε down from 1 to a small value, commonly 0.1. In our case there's not much point at exploring with high ε values once we have the initial random-action replay dataset collected - instead it's faster to just train the positive examples we have from the initial exploration, and start learning straight away what variants of those examples fail.
-
-Conversely, ε=0.2 is a good choice for this particular environment since the vulture's weapon cools down in about 5 timesteps - and so it makes sense to try one deviation from the known strategy with this cadence. If ε is smaller then convergence to a winning strategy takes longer, if ε is larger then the bot struggles to develop a winning strategy at all as it's always losing from the chaos (The bot requires at least 10 timesteps to win, and can instantly lose if 1-2 of the actions in these timesteps are bad).
-
-
-#### Conclusions
-
-These modifications to a generic DQN:
-- separate Win+Loss experience buffers
-- buffer size approx 100-500 episodes (battles)
-- fixed ε=0.2 (or likely more generally, a non-trivial value for ε that we don't waste time annealing down to)
-- 10^5 random exploration before training begins (enough to fill the Win experience buffer)
-
-Mean that our algorithm is able to repeatably and successfully solve a problem with a 1% random success rate.
+By storing experience from won and loss battles in separate buffers, and choosing half of the training sample from each, we ensure that the agent is able to learn some positive behaviours as well as negative. This modification to a generic DQN means that our agent is able to repeatably and successfully solve a problem with a 1% random success rate.
 
 
 #### Future Work
@@ -320,7 +293,6 @@ Mean that our algorithm is able to repeatably and successfully solve a problem w
 
 
 #### Implementation
-
 
 - [dqn_bot.py](dqn_bot.py): The DQN network implementation in TensorFlow.
 - [exercise.py](exercise.py): ```main()``` function to run multiple trials on multiple hyperparameter configurations, and interface between the agent and [tc_client.py](tc_client.py).
