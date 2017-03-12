@@ -266,8 +266,8 @@ The network is generally able to learn an optimal strategy in 50k timesteps. Win
 
 The results are skewed by 2  trials which were not able to find successful strategies. The win rates for the 10 trials after 50k steps are:
 
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0.94 | 0.95 | 0.63 | 0 | 0.96 | 0.95 | 0.98 | 0.88 | 0 | 0.9 |
+| ---- | ---- | ---- | --- | ---- | ---- | ---- | ---- | --- | --- |
+| 0.94 | 0.95 | 0.63 | 0   | 0.96 | 0.95 | 0.98 | 0.88 | 0   | 0.9 |
 
 Video of a successful agent: https://www.youtube.com/watch?v=UHgK2RxLCKM
 
