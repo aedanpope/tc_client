@@ -1,26 +1,25 @@
 # TensorFlow and StarCraft
 
-* [Background](#background)
-   * [StarCraft](#starcraft)
-   * [AI research with StarCraft](#ai-research-with-starcraft)
-   * [BWAPI](#bwapi)
-   * [Torch](#torch)
-   * [TensorFlow](#tensorflow)
-   * [TorchCraft](#torchcraft)
-* [This project](#this-project)
-   * [1. Python Client for BWAPI](#1-python-client-for-bwapi)
-   * [2. StarCraft TensorFlow agent examples](#2-starcraft-tensorflow-agent-examples)
-   * [3. A DQN for solving a difficult binary-success problem in StarCraft (that is, a DQN for a kiting micro-battle).](#3-a-dqn-for-solving-a-difficult-binary-success-problem-in-starcraft-that-is-a-dqn-for-a-kiting-micro-battle)
-      * [Abstract](#abstract)
-      * [Introduction](#introduction)
-      * [Environment and Parameterization](#environment-and-parameterization)
-      * [Reward Policy](#reward-policy)
-      * [Algorithm](#algorithm)
-      * [Results](#results)
-      * [Conclusions](#conclusions)
-      * [Future Work](#future-work)
-      * [Implementation](#implementation)
-      * [References](#references)
+  * [Background](#background)
+     * [StarCraft](#starcraft)
+     * [AI research with StarCraft](#ai-research-with-starcraft)
+     * [BWAPI](#bwapi)
+     * [Torch](#torch)
+     * [TensorFlow](#tensorflow)
+     * [TorchCraft](#torchcraft)
+  * [This project](#this-project)
+     * [Python Client and TorchCraft integration for BWAPI](#python-client-and-torchcraft-integration-for-bwapi)
+     * [A DQN for solving a difficult binary-success problem in StarCraft (that is, a DQN for a <a href="http://wiki.teamliquid.net/starcraft2/Kiting">"kiting"</a> micro-battle).](#a-dqn-for-solving-a-difficult-binary-success-problem-in-starcraft-that-is-a-dqn-for-a-kiting-micro-battle)
+        * [Abstract](#abstract)
+        * [Introduction](#introduction)
+        * [Environment and Parameterization](#environment-and-parameterization)
+        * [Reward Policy](#reward-policy)
+        * [Algorithm](#algorithm)
+        * [Results](#results)
+        * [Conclusions](#conclusions)
+        * [Future Work](#future-work)
+        * [Implementation](#implementation)
+        * [References](#references)
 
 ## Background
 
@@ -63,16 +62,13 @@ TensorFlow is maintained by Google's Brain team. TensorFlow left Beta and V1  wa
 - A Lua client for talking to the server.
 - Examples of Lua code that implement a StarCraft agent using the Torch machine learning library.
 
-The main advantage of TorchCraft is that one can build a StarCraft agent in a Unix environment.
+The main advantage of TorchCraft is that one can build a StarCraft agent in a Unix environment, where the Torch Lua libraries are easy to use.
 
 
 ## This project
 
-1. A Python client for the BWAPI server from TorchCraft.
-2. Examples of StarCraft agents implemented using the TensorFlow python libraries.
-3. A Deep Q-network to learn the ["kiting"](http://wiki.teamliquid.net/starcraft2/Kiting) mechanic in StarCraft.
 
-### 1. Python Client for BWAPI
+### Python Client and TorchCraft integration for BWAPI
 
 In order to the TensorFlow python api in a native Unix environment for building StarCraft AIs, we have written a python client for the TorchCraft C++ server:
 - Network IO is generally in [tc_client.py](tc_client.py).
@@ -80,16 +76,14 @@ In order to the TensorFlow python api in a native Unix environment for building 
 - [state.py](state.py) is responsible for parsing the responses from the server and turning them into typed obejects.
 - [exercise.py](exercise.py) shows a ```main()``` function which instantiates a client and sends it commands from an agent.
 
-
-### 2. StarCraft TensorFlow agent examples
-
 The existing best-class environment for StarCraft research is TorchCraft (used in recent research [[1](https://arxiv.org/abs/1609.02993), [2](https://arxiv.org/abs/1702.08887)]).
 
 TensorFlow support for BWAPI makes writing machine learning agents accessible to everyone who knows TensorFlow, and is a solid long-term investment as TensorFlow grows in popularity and functionality. TensorFlow's [github](https://github.com/tensorflow/tensorflow) has ~10x more commits than [Torch's](https://github.com/torch/torch7).
 
 For example, [Juliani's Q-Learing Part 0 blog post](https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-0-q-learning-with-tables-and-neural-networks-d195264329d0#.icolg93n8) cointains sample TensorFlow code for a simple Q-network, which we've implemented to control a starcraft agent in [bot_q_learner_simple_a.py](bot_q_learner_simple_a.py) (the TensorFlow code specifically is [here](https://github.com/aedanpope/tc_client/blob/728ac6b889b1aa702ecea65a7a49bdb99d2625cd/bot_q_learner_simple_a.py#L127)).
 
-### 3. A DQN for solving a difficult binary-success problem in StarCraft (that is, a DQN for a kiting micro-battle).
+
+### A DQN for solving a difficult binary-success problem in StarCraft (that is, a DQN for a ["kiting"](http://wiki.teamliquid.net/starcraft2/Kiting) micro-battle).
 
 
 #### Abstract

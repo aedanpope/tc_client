@@ -131,10 +131,6 @@ class Stage:
     self.is_end = state.battle_ended
     self.is_won = state.battle_won
 
-    # self.is_end = self.friendly_life == 0 or self.enemy_life == 0
-    # if self.is_end:
-    #   self.is_won = self.friendly_life > 0
-    # self.reward = 0
 
   def to_str(self):
     return ("Stage {" +
@@ -162,10 +158,6 @@ def output_to_command(action, state):
   friendly = state.friendly_units.values()[0]
   enemy = state.enemy_units.values()[0]
 
-
-  # 0 = do nothing
-  # 1-8 = move 5 units in dir
-  # 9-13 = attack unit num 0-4
   a = action
   if a < 0 or len(MOVES)+1 < a:
     raise Exception("Invalid action: " + str(a))
@@ -236,7 +228,6 @@ def unit_to_vector(unit, is_friendly):
       is_move = order_type == 6  #
       is_attack = order_type == 10 #
     unit_vector = unit_vector + [int(is_guard), int(is_move), int(is_attack)]
-    # unit_vector = unit_vector + [int(is_guard), int(is_move), int(is_attack)]
 
   return unit_vector
 

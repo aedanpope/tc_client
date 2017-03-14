@@ -115,9 +115,7 @@ if __name__ == '__main__':
   # update = tc.receive()
 
   tc.send([
-      # [tc_client.CMD.set_speed, 13],
       [tc_client.CMD.set_speed, speed],
-      # [tc_client.CMD.set_gui, 0],
       # [tc_client.CMD.set_gui, 1],
       [tc_client.CMD.set_frameskip, 5],
       [tc_client.CMD.set_cmd_optim, 1],
@@ -137,7 +135,6 @@ if __name__ == '__main__':
   hyperparameter_sets = Map({'default_params': {}})
   if args.hyperparameter_sets:
     hyperparameter_sets = dqn_bot.parse_hyperparameter_sets(args.hyperparameter_sets)
-    # eval("Map("+args.hyperparameter_sets+")")
   print "hyperparameter_sets = " + str(hyperparameter_sets)
   print ""
 
@@ -193,7 +190,7 @@ if __name__ == '__main__':
       step_last_test_start = 0
       mode = Mode.test
       test_battles = args.test_battles
-      # Add a little to check, so that we can finish the last training battle.
+      # train_for_steps+100 not +0 , so that we can finish the last training battle.
       while steps_trained <= train_for_steps+100 or (mode == Mode.test and test_battles_fought < test_battles):
         update = tc.receive()
         commands = []

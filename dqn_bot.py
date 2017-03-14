@@ -1,28 +1,3 @@
-# Policy Functions
-# https://github.com/awjuliani/DeepRL-Agents/blob/master/Vanilla-Policy.ipynb
-# https://medium.com/@awjuliani/super-simple-reinforcement-learning-tutorial-part-2-ded33892c724#.axhe0juti
-# http://karpathy.github.io/2016/05/31/rl/
-#
-# TODO:
-# 1. DQN network first:
-# https://medium.com/@awjuliani/simple-reinforcement-learning-with-tensorflow-part-4-deep-q-networks-and-beyond-8438a3e2b8df#.1p0qomyrr
-#
-# 2.Way better exploration ala
-# https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-7-action-selection-strategies-for-exploration-d3a97b7cceaf#.rr1b6cl6e
-# I should implement them all as hyperparameters and experiment.
-#
-# 3. Explore better reward functions, as per "Advanced Approaches" at the bottom of the exploration article above.
-#
-# 4. AC3!@
-# https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-8-asynchronous-actor-critic-agents-a3c-c88f72a5e9f2#.449tze1hh
-
-#
-# DQN Bot:
-# - SKIP: Convolution network.
-# - Target Network
-# - Experience Replay
-
-
 import tc_client
 from map import Map
 import argparse
@@ -64,13 +39,8 @@ Act = Map(
   Greedy_Optimal = 4, # For 50% of episodes, use the best known values.
 )
 
-# For harder learning, increase these params:
-
-
-
 
 # Hyper Parameters
-# TODO move params into this as they need to be set for experiments.
 HP = Map(
 
 # Topology
@@ -106,9 +76,6 @@ def E_STEP():
 SESS = None
 TF_WRITER = None
 
-## Generally, try and keep everything in the [-1,1] range.
-## TODO: consider trying [0,1] range for some stuff e.g. HP.
-
 
 def parse_hyperparameter_sets(hyperparameter_sets_string):
   return eval("Map("+hyperparameter_sets_string+")")
@@ -126,14 +93,6 @@ def process_hyperparameters(hyperparameters):
     print "set hyperparameter " + param + " to " + str(val)
     if HP[param] is None:
       raise Exception("param " + param + " was set to none. Check for typos in flag value of hyperparameters")
-
-
-def vsstr(vars):
-  return ',\n'.join([vstr(v) for v in vars])
-
-
-def vstr(var):
-    return str(var.initial_value)
 
 
 UID = 0
@@ -170,11 +129,6 @@ class DQNNetwork:
 
     existing_tvars = tf.trainable_variables()
 
-    # Policy agent from
-    # https://github.com/awjuliani/DeepRL-Agents/blob/master/Vanilla-Policy.ipynb
-
-    # These lines established the feed-forward part of the network. The agent takes a state and produces an action.
-    # self.state_in= tf.placeholder(shape=[INP_SHAPE],dtype=tf.float32, name=("state_in_" + myname))
 
     self.state_in= tf.placeholder(shape=[None,agent.INP_SHAPE],dtype=tf.float32, name=self.name_var("state_in"))
 
@@ -190,16 +144,10 @@ class DQNNetwork:
                                       scope=self.name_var("q_out"))
     self.action_out = tf.argmax(self.q_out,1, name=self.name_var("action_out"))
 
-    # self.boltzmann_denom = tf.placeholder(shape=None,dtype=tf.float32)
+    # Optional, if we want to use boltzmann action. We are meant to anneal boltzmann_denom.
     self.boltzmann_denom = tf.placeholder(dtype=tf.float32)
     self.boltzmann_out = tf.nn.softmax(self.q_out/self.boltzmann_denom)
 
-
-    # TODO: Take the log of the output values, to allow Positive and Negative rewards/advantages.
-    # Taking a Log I think will stop divergence.
-    # https://medium.com/@awjuliani/super-simple-reinforcement-learning-tutorial-part-1-fd544fab149#.kbxmx7lfm
-
-    #Below we obtain the loss by taking the sum of squares difference between the target and prediction Q values.
     self.target_q_holder = tf.placeholder(shape=[None],dtype=tf.float32, name=self.name_var("target_q_holder"))
     self.action_holder = tf.placeholder(shape=[None],dtype=tf.int32, name=self.name_var("action_holder"))
     actions_onehot = tf.one_hot(self.action_holder,agent.OUT_SHAPE,dtype=tf.float32, name=self.name_var("actions_onehot"))
@@ -294,7 +242,6 @@ class DQNNetwork:
                    main_network.action_holder:train_batch.actions()})
 
     main_network.step += 1
-    # if (STEP % 10 == 0):
     TF_WRITER.add_summary(summary, main_network.step)
 
   def update_from_main_graph(self, main_graph):
@@ -372,7 +319,6 @@ class Bot:
     self.frame += 1
     # Maybe want to skip frames or something, we don't need this anymore since prev state is an input
     # into Network so it can learn velocity & not to cancel current order.
-
 
     stage = Stage(game_state)
     self.war.update_current_battle(stage)

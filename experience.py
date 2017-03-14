@@ -168,9 +168,6 @@ class ExperienceRecordingBot:
     f.write(experience_list.SerializeToString())
     f.close()
 
-    pass
-    # TODO write experiences to file.
-
 
 class ExperienceIO:
   experience_list = None
@@ -181,7 +178,6 @@ class ExperienceIO:
 
 
   def append(self, state, action, reward, new_state, done, is_won):
-    # exp = experience_pb2.Experience()
     exp = self.experience_list.experience.add()
     exp.state = state
     exp.action = action
