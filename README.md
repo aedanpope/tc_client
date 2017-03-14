@@ -134,8 +134,7 @@ There has been [some previous research](https://scholar.google.co.uk/scholar?hl=
 
 In this project we consider the Kiting problem as a exercise to:
 - Demonstrating the usefulness of the TensorFlow integration into BWAPI.
-- See if a relatively generic Deep Q-learning network can solve the kiting problem (
-a network largely like that described in (Mnih et al, 2015)).
+- See if a relatively generic Deep Q-learning network can solve the kiting problem (a network largely like that described in (Mnih et al, 2015)).
 
 By modifying the experience replay buffer of a standard DQN to contain different sets for Wins vs Losses - we are able to achieve strong win rates (average 92% after 50k timesteps).
 
@@ -264,7 +263,7 @@ The network is generally able to learn an optimal strategy in 50k timesteps. Win
 | 45k | 0.653 |
 | 50k | 0.719 |
 
-The results are skewed by 2  trials which were not able to find successful strategies. The win rates for the 10 trials after 50k steps are:
+The results are skewed by 2 trials which were not able to find and hold successful strategies (we hacked in only exploring. The win rates for the 10 trials after 50k steps are:
 
 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |

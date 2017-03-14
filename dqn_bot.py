@@ -72,22 +72,24 @@ Act = Map(
 # Hyper Parameters
 # TODO move params into this as they need to be set for experiments.
 HP = Map(
-ACTION_STRATEGY = Act.Boltzmann,
 
-# Configurable topology
+# Topology
 HID_1_SHAPE = 300,
 HID_2_SHAPE = 200,
+
+# Experience buffers.
+BUFFER_SIZE = 50000,
+SEPARATE_BUFFERS = True, # Separate buffers for wins and losses.
+BATCH_SIZE = 100, # 32 #How many experiences to use for each training step.
+UPDATE_FREQ = 4, # 4 #How often to perform a training step.
 
 # Learning and env params:
 LEARNING_RATE = 0.01,
 TAU = 0.001, # Rate to update target network toward primary network
-BUFFER_SIZE = 50000,
 FUTURE_Q_DISCOUNT = .99, #Discount factor on future Q-values, discount on expected future reward.
 START_E = 1, #Starting chance of random action
 END_E = 0.05, #0.1 #Final chance of random action
-
-BATCH_SIZE = 100, # 32 #How many experiences to use for each training step.
-UPDATE_FREQ = 4, # 4 #How often to perform a training step.
+ACTION_STRATEGY = Act.Boltzmann, # Should be renamed EXPLORATION_STRATEGY
 
 # PRE_TRAIN_STEPS needs to be to be more than BATCH_SIZE
 # PRE_TRAIN_STEPS requires a lot so we have at least a few wins once we start learning.
@@ -351,7 +353,9 @@ class Bot:
     SESS.run(tf.global_variables_initializer())
     # Init the target network to be equal to the primary network.
     self.target_network.update_from_main_graph(self.main_network)
-    self.experience_buffer = ExperienceBuffer(HP.BUFFER_SIZE, init_file_path)
+    self.experience_buffer = ExperienceBuffer(buffer_size=HP.BUFFER_SIZE,
+                                              init_file_path=init_file_path,
+                                              separate_buffers=HP.SEPARATE_BUFFERS)
 
     self.total_reward = 0
     self.total_reward_p = 0
@@ -448,8 +452,13 @@ class Bot:
 
       print "total_steps = " + str(self.total_steps) + ", PRE_TRAIN_STEPS = " + str(HP.PRE_TRAIN_STEPS)
       print "explore = " + str(self.explore)
-      print ("win_buffer = " + str(len(self.experience_buffer.win_buffer)) +
-             ", lose_buffer = " + str(len(self.experience_buffer.lose_buffer)))
+
+      if HP.SEPARATE_BUFFERS:
+        print ("win_buffer = " + str(len(self.experience_buffer.win_buffer)) +
+               ", lose_buffer = " + str(len(self.experience_buffer.lose_buffer)))
+      else:
+        print ("buffer = " + str(len(self.experience_buffer.buffer)))
+
       print ("total_reward = " + str(self.total_reward) +
              ", total_reward_p = " + str(self.total_reward_p) +
              ", total_reward_n = " + str(self.total_reward_n))

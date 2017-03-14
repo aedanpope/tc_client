@@ -1,5 +1,15 @@
 To do:
 
+Experiments
+
+Run so far:
+- Act.Greedy_Optimal + SEPARATE_BUFFERS=False
+- Act.Greedy_Optimal + SEPARATE_BUFFERS=True
+
+To run:
+- Act.Greedy + SEPARATE_BUFFERS=False
+- Act.Greedy + SEPARATE_BUFFERS=True
+
 randomize starting location
 
 build a single map with kite 2/3/4 in it,

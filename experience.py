@@ -6,8 +6,6 @@ import agent
 import numpy as np
 
 
-
-
 class ExperienceTable:
 
   # Nx5 array
@@ -32,17 +30,24 @@ class ExperienceTable:
 
 class ExperienceBuffer():
 
+  separate_buffers = None
+  buffer = None
   win_buffer = None
   lose_buffer = None
   buffer_size = None
 
-  def __init__(self, buffer_size=sys.maxint, init_file_path=None):
+  def __init__(self, buffer_size=sys.maxint, init_file_path=None, separate_buffers=True):
     """
     Args:
       init_file_path: If specified, initialize the experience buffer with the data in this file.
     """
-    self.win_buffer = []
-    self.lose_buffer = []
+    self.separate_buffers = separate_buffers
+    if separate_buffers:
+      self.win_buffer = []
+      self.lose_buffer = []
+    else:
+      self.buffer = []
+
     self.buffer_size = buffer_size
 
     if init_file_path:
@@ -64,10 +69,13 @@ class ExperienceBuffer():
     if None in row:
       raise Exception("Can't have a none in experience " + str(vec))
 
-    if is_won:
-      buf = self.win_buffer
+    if self.separate_buffers:
+      if is_won:
+        buf = self.win_buffer
+      else:
+        buf = self.lose_buffer
     else:
-      buf = self.lose_buffer
+      buf = self.buffer
 
     buf.append(row)
     # Maybe slow, consider using a boolean mask to change in-place
@@ -77,21 +85,31 @@ class ExperienceBuffer():
 
 
   def enough_to_sample(self, size):
-    return size/2 < len(self.win_buffer) and size/2 < len(self.lose_buffer)
+    if self.separate_buffers:
+      return size/2 < len(self.win_buffer) and size/2 < len(self.lose_buffer)
+    else:
+      return size < len(self.buffer)
 
 
   def sample(self, size):
-    # return np.reshape(np.array(random.sample(self.buffer,size)),[size,5])
-    wins = random.sample(self.win_buffer, min(size/2, len(self.win_buffer)))
-    losses = random.sample(self.lose_buffer , min(size/2, len(self.lose_buffer)))
     result = ExperienceTable()
-    result.table = wins + losses
+
+    if self.separate_buffers:
+      wins = random.sample(self.win_buffer, min(size/2, len(self.win_buffer)))
+      losses = random.sample(self.lose_buffer , min(size/2, len(self.lose_buffer)))
+      result.table = wins + losses
+    else:
+      result.table = random.sample(self.buffer, size)
+
     random.shuffle(result.table)
     return result
 
 
   def all(self):
-    return ExperienceTable(self.win_buffer + self.lose_buffer)
+    if self.separate_buffers:
+      return ExperienceTable(self.win_buffer + self.lose_buffer)
+    else:
+      return ExperienceTable(self.buffer)
 
 
 def add_experience_to_list(experience_list, row, is_won):
