@@ -247,7 +247,11 @@ We use the Adam gradient-descent algorithm for training the network ([Kingma et.
 
 #### Results
 
-The network is generally able to learn an optimal strategy in 50k timesteps. Win rates by testing the best guess of the network from 100 battles * 10 trials after a given number of training steps:
+The network is generally able to learn an optimal strategy in 50k timesteps. Win rates by testing the best guess of the network from 100 battles * 10 trials after a given number of training steps.
+
+![Graph of results from 4 experiments](results/chart.png)
+
+
 
 | Training Steps | Win rate |
 | --- | --- |
