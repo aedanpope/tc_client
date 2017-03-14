@@ -74,9 +74,7 @@ The main advantage of TorchCraft is that one can build a StarCraft agent in a Un
 
 ### 1. Python Client for BWAPI
 
-Goal: use the TensorFlow python api in a native Unix environment for building StarCraft AIs.
-
-We've written a python client for the TorchCraft C++ server:
+In order to the TensorFlow python api in a native Unix environment for building StarCraft AIs, we have written a python client for the TorchCraft C++ server:
 - Network IO is generally in [tc_client.py](tc_client.py).
 - The TorchCraft server returns the game-state as a Lua object string, which we transform into a python object string and ```eval()``` [here](https://github.com/aedanpope/tc_client/blob/427aafc9aa5dce7561325e74c64f4e8a13905e5e/tc_client.py#L254).
 - [state.py](state.py) is responsible for parsing the responses from the server and turning them into typed obejects.
@@ -87,7 +85,7 @@ We've written a python client for the TorchCraft C++ server:
 
 The existing best-class environment for StarCraft research is TorchCraft (used in recent research [[1](https://arxiv.org/abs/1609.02993), [2](https://arxiv.org/abs/1702.08887)]).
 
-TensorFlow support for BWAPI makes writing machine learning agents accessible to everyone who knows TensorFlow, and is a solid long-term investment as TensorFlow grows in popularity and functionality. For example, TensorFlow's [github](https://github.com/tensorflow/tensorflow) has ~10x more commits than [Torch's](https://github.com/torch/torch7).
+TensorFlow support for BWAPI makes writing machine learning agents accessible to everyone who knows TensorFlow, and is a solid long-term investment as TensorFlow grows in popularity and functionality. TensorFlow's [github](https://github.com/tensorflow/tensorflow) has ~10x more commits than [Torch's](https://github.com/torch/torch7).
 
 For example, [Juliani's Q-Learing Part 0 blog post](https://medium.com/emergent-future/simple-reinforcement-learning-with-tensorflow-part-0-q-learning-with-tables-and-neural-networks-d195264329d0#.icolg93n8) cointains sample TensorFlow code for a simple Q-network, which we've implemented to control a starcraft agent in [bot_q_learner_simple_a.py](bot_q_learner_simple_a.py) (the TensorFlow code specifically is [here](https://github.com/aedanpope/tc_client/blob/728ac6b889b1aa702ecea65a7a49bdb99d2625cd/bot_q_learner_simple_a.py#L127)).
 
@@ -185,11 +183,11 @@ Network Topology:
 - 23 input nodes
 - fully connected hidden layer of size 200, activation function ReLU
 - fully connected hidden layer of size 300, activation function ReLU
-- 6 output nodes, activation function TanH
+- 6 output nodes, activation function TanH (from (Lillicrap et al., 2015))
 
 We consider two tweaks to the standard DQN algorithm:
 - Separate buffers for storing experience from won and loss episodes: intuitively to make sure the agent trains at some experience from the 1% of randomly won battles, and doesn't just train losses.
-- Set ε=0 in every 2nd episode: In some trials it was observed that performance would degrade from high win rates early on (e.g. 98% at 10k time steps), to completely losing when performance was measured again 5k steps later. By performing every second episode using the current "best known strategy" we hoped the algorithm would more quickly unlearn these regressions.
+- Set ε=0 in every 2nd episode: In some trials it was observed that performance would degrade from high win rates early on (e.g. 98% at 10k time steps), to completely losing when performance was measured again 5k steps later (0% win rate). By performing every second episode using the current "best known strategy" we hoped the algorithm would more quickly unlearn these regressions.
 
 Algorithm including both tweaks:
 
@@ -276,18 +274,16 @@ Video of a successful agent of the win-loss-buffers algorithm, demonstrating the
 
 Randomly choosing actions from the 6 possible commands results in a win-rate of ~1.1%. With enough pre-training exploration, a standard DQN is able to achieve decent performance at this problem, and sometimes but not always human-expert-level performance (a 100% win rate).
 
-We attepted algorithm tweaks of alternate-ε=0 and win-loss-buffers to the standard DQN to see if we could more consistenly achieve expert performance, but found that these have a neutral (alternate-ε=0) or negative (win-loss-buffers) impact on performance instead.
+The algorithm tweaks of alternate-ε=0 and win-loss-buffers to the standard DQN have a neutral (alternate-ε=0) or negative (win-loss-buffers) impact on performance instead.
 
 
 #### Future Work
 
 - Combine with (Foerster et al., 2017)'s on multi-unit micro battles in StarCraft to see if we can win multi-unit kiting battles (e.g. 5 Vultures vs. 5 Zealots).
 
-- Apply more advanced experience and reward management algorithms to StarCraft micro battles to try and achieve expert-level performance, for example the NEC algorithm (Pritzel et al., 2017).
+- Find an incremental reward policy that solves this scenario. Using absolute reward for win/loss allows the algorithm to find the best solution, but won't generalize to harder battles (e.g. 5v5 vultures vs zealots) where there will be no chance of randomly generating a winning solution. Need a good heuristic. Maybe experiment with the reward decay, train a network to estimate the value of given states, or try Dueling DQN (Wang et al., 2015). This could lead to expert-level performance.
 
 - See if we can extend the algorithm to solve a harder kiting battle. Recall that _n_ is the environment parameter of the number of hits that the vulture requires to kill the zealot (and the zealot always kills the vulture in one hit). Perhaps the same algorithm can solve 3-kite or 4-kite. It's unlikely it will succeed for high values of n, as the amount of random exploration required to fill the win buffer will exponentially increase (it takes ~5 timesteps to fire once at the zealot and dance back, so the number of good random choices required for victory is O(n), and the probability of making enough good choices to win is then O(p^n) for some probability p < 1). Maybe we can learn the beginnings of a successful strategy for, say n=4, by training an agent against n=2 and then slowly introducing n=3 and n=4 episodes into the conflict. Or by evenly cycling between battles of n=2,3,4 (only resulting in linear growth of the amount of initial exploration required to fill the win buffer).
-
-- Find an incremental reward policy that solves this scenario. Using absolute reward for win/loss allows the algorithm to find the best solution, but won't generalize to harder battles (e.g. 5v5 vultures vs zealots) where there will be no chance of randomly generating a winning solution. Need a good heuristic. Maybe experiment with the reward decay, train a network to estimate the value of given states, or try Dueling DQN (Wang et al., 2015)
 
 
 #### Implementation
