@@ -102,7 +102,7 @@ In this research, the battles have been between symmetrical forces. Giving no or
 
 When pitting a fast ranged unit vs. a slow melee one in StarCraft, the optimal control strategy for the ranged unit is to _Kite_ the melee one (fire from range, dance backwards before the melee unit can attack, and fire again). Giving no orders in this Battle to the ranged unit is a guaranteed loss.
 
-We construct a simplified battle where kiting is the optimal stragey, and where randomly generating orders from a small but sufficient set results in nominal win rates (~1%). Then we show that the standard DQN algorithm is able to solve this battle. We attempt some intuitive modifications to the DQN (separate buffers for wins & losses, not ε-Greedy exploring in every 2nd episode), and show that emperically these have neutral-to-negative impact on the performance of the algorithm. Generic DQN is hard to beat.
+We construct a simplified battle where kiting is the optimal stragey, and where randomly generating orders from a small but sufficient set results in nominal win rates (~1%). Then we show that the standard DQN algorithm is able to consistently perform well at this battle, sometimes achieving human-level performance. We attempt some intuitive modifications to the DQN (separate buffers for wins & losses, not ε-Greedy exploring in every 2nd episode), and show that emperically these have neutral-to-negative impact on the performance of the algorithm. Generic DQN is hard to beat.
 
 Human Expert winning the micro battle: https://www.youtube.com/watch?v=PnEhLxpL29U
 
@@ -257,56 +257,33 @@ At 50k timesteps, the standard deviations in win-rate of the algorithms are:
 | Algorithm | Win rate standard dev over 10 trials |
 | --- | --- |
 | Standard DQN | 0.131 |
-| alternate ε=0 | 0.318 |
+| alternate-ε=0 | 0.318 |
 | win-loss-buffers | 0.379 |
-| alternate ε=0 + win-loss-buffers | 0.392 |
+| alternate-ε=0 + win-loss-buffers | 0.392 |
 
-The standard DQN is able to learn optimal strategy reliably.
-The alternate ε=0 var
+We see that the standard DQN has the most reliable performance, with less than half the standard deviation of the others.
 
+The Standard DQN and alternate-ε=0 algorithms have roughly equal best performance, whils the variants with win-loss-buffers both underperform.
 
-The network is generally able to learn a decent strategy in 50k timesteps with all variants of the algorithm
+Curiously, the win-loss-buffers variants both have an early peak at around 15k steps, degrade sharply in performance for 10k steps, before returning to hold at around a 70% win rate. alternate-ε=0 reduces the depth of this performance degredation in win-loss-buffers slightly, but not to a significant amount (< 1 stddev).
 
+The alternate-ε=0 variant seems to accelerate the learning rate of both standard DQN and win-loss-buffers slightly.
 
-
-
-| Training Steps | Win rate |
-| --- | --- |
-| 0k | 0 |
-| 5k | 0.167 |
-| 10k | 0.688 |
-| 15k | 0.728 |
-| 20k | 0.306 |
-| 25k | 0.343 |
-| 30k | 0.626 |
-| 35k | 0.633 |
-| 40k | 0.699 |
-| 45k | 0.653 |
-| 50k | 0.719 |
-
-The results are skewed by 2 trials which were not able to find and hold successful strategies (we hacked in only exploring. The win rates for the 10 trials after 50k steps are:
-
-| 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0.94 | 0.95 | 0.63 | 0 | 0.96 | 0.95 | 0.98 | 0.88 | 0 | 0.9 |
-
-Video of a successful agent, demonstrating the kiting technique used by human experts: https://www.youtube.com/watch?v=UHgK2RxLCKM
+Video of a successful agent of the win-loss-buffers algorithm, demonstrating the kiting technique used by human experts: https://www.youtube.com/watch?v=UHgK2RxLCKM
 
 
 #### Conclusions
 
-Randomly choosing actions from the 6 possible commands results in a win-rate of ~1.1%. This means that the traditional DQN with a single experience buffer is training examples with -ve reward the vast majority of the time. In our experiments with this strategy, the agents would never learn how to win - just how to delay defeat for as long as possible.
+Randomly choosing actions from the 6 possible commands results in a win-rate of ~1.1%. With enough pre-training exploration, a standard DQN is able to achieve decent performance at this problem, and sometimes but not always human-expert-level performance (a 100% win rate).
 
-By storing experience from won and loss battles in separate buffers, and choosing half of the training sample from each, we ensure that the agent is able to learn some positive behaviours as well as negative. This modification to a generic DQN means that our agent is able to repeatably and successfully solve a problem with a 1% random success rate.
+We attepted algorithm tweaks of alternate-ε=0 and win-loss-buffers to the standard DQN to see if we could more consistenly achieve expert performance, but found that these have a neutral (alternate-ε=0) or negative (win-loss-buffers) impact on performance instead.
 
 
 #### Future Work
 
-- Find other 1%-random-success problems and see if these modifications can solve problems of this nature in general.
+- Combine with (Foerster et al., 2017)'s on multi-unit micro battles in StarCraft to see if we can win multi-unit kiting battles (e.g. 5 Vultures vs. 5 Zealots).
 
-- Combine this work with (Foerster et al., 2017)'s on multi-unit micro battles in StarCraft to see if we can win multi-unit kiting battles (e.g. 5 Vultures vs. 5 Zealots).
-
-- Apply more advanced experience and reward management algorithms to StarCraft micro battles, for example the NEC algorithm (Pritzel et al., 2017).
+- Apply more advanced experience and reward management algorithms to StarCraft micro battles to try and achieve expert-level performance, for example the NEC algorithm (Pritzel et al., 2017).
 
 - See if we can extend the algorithm to solve a harder kiting battle. Recall that _n_ is the environment parameter of the number of hits that the vulture requires to kill the zealot (and the zealot always kills the vulture in one hit). Perhaps the same algorithm can solve 3-kite or 4-kite. It's unlikely it will succeed for high values of n, as the amount of random exploration required to fill the win buffer will exponentially increase (it takes ~5 timesteps to fire once at the zealot and dance back, so the number of good random choices required for victory is O(n), and the probability of making enough good choices to win is then O(p^n) for some probability p < 1). Maybe we can learn the beginnings of a successful strategy for, say n=4, by training an agent against n=2 and then slowly introducing n=3 and n=4 episodes into the conflict. Or by evenly cycling between battles of n=2,3,4 (only resulting in linear growth of the amount of initial exploration required to fill the win buffer).
 
