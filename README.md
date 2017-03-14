@@ -1,7 +1,5 @@
 # TensorFlow and StarCraft
 
-Table of Contents
-=================
 * [Background](#background)
    * [StarCraft](#starcraft)
    * [AI research with StarCraft](#ai-research-with-starcraft)
@@ -104,11 +102,11 @@ In this research, the battles have been between symmetrical forces. Giving no or
 
 When pitting a fast ranged unit vs. a slow melee one in StarCraft, the optimal control strategy for the ranged unit is to _Kite_ the melee one (fire from range, dance backwards before the melee unit can attack, and fire again). Giving no orders in this Battle to the ranged unit is a guaranteed loss.
 
-We construct a simplified battle where kiting is the optimal stragey, and where randomly generating orders from a small but sufficient set results in nominal win rates (~1%). Then we show that a relatively generic DQN is able to solve this battle with one key modifications: separate experience buffers for experience in battles which were won or lost.
+We construct a simplified battle where kiting is the optimal stragey, and where randomly generating orders from a small but sufficient set results in nominal win rates (~1%). Then we show that the standard DQN algorithm is able to solve this battle. We attempt some intuitive modifications to the DQN (separate buffers for wins & losses, not ε-Greedy exploring in every 2nd episode), and show that emperically these have neutral-to-negative impact on the performance of the algorithm. Generic DQN is hard to beat.
 
 Human Expert winning the micro battle: https://www.youtube.com/watch?v=PnEhLxpL29U
 
-The DQN learning an optimal strategy over time: https://www.youtube.com/watch?v=UHgK2RxLCKM
+The network learning an optimal strategy over time: https://www.youtube.com/watch?v=UHgK2RxLCKM
 
 
 #### Introduction
@@ -138,10 +136,7 @@ In this project we consider the Kiting problem as a exercise to:
 - Demonstrating the usefulness of the TensorFlow integration into BWAPI.
 - See if a relatively generic Deep Q-learning network can solve the kiting problem (a network largely like that described in (Mnih et al, 2015)).
 
-By modifying the experience replay buffer of a standard DQN to contain different sets for Wins vs Losses - we are able to achieve strong win rates (average 92% after 50k timesteps).
-
-There is much research into experience and reward management for Reinforcement Learning, for an overview see Section 5 of (Pritzel et al., 2017). Our tweaks to the DQN replay buffer are rudimentary - future work would be to apply more advanced experience and reward management techniques to the StarCraft micro battles domain.
-
+We are able to achive strong win rates on this problem (89% on average after 50k timesteps, 100% in best trials) with a standard DQN algorithm.
 
 #### Environment and Parameterization
 
@@ -192,8 +187,11 @@ Network Topology:
 - fully connected hidden layer of size 300, activation function ReLU
 - 6 output nodes, activation function TanH
 
+We consider two tweaks to the standard DQN algorithm:
+- Separate buffers for storing experience from won and loss episodes: intuitively to make sure the agent trains at some experience from the 1% of randomly won battles, and doesn't just train losses.
+- Set ε=0 in every 2nd episode: In some trials it was observed that performance would degrade from high win rates early on (e.g. 98% at 10k time steps), to completely losing when performance was measured again 5k steps later. By performing every second episode using the current "best known strategy" we hoped the algorithm would more quickly unlearn these regressions.
 
-Algorithm:
+Algorithm including both tweaks:
 
 ```
 Initialize win experience buffer W to capacity N_w
@@ -231,27 +229,44 @@ For battle 1, ... do
 End For
 ```
 
+We use the Adam gradient-descent algorithm for training the network ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)) (also see TensorFlow [tf.train.AdamOptimizer](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer).
+
 Hyperparameters
 
 | Variable   | Hyperparameter | value |
 |---- | ------------------- | --- |
 | T   | training batch size | 100 |
-| N<sub>W</sub> | win experience buffer size | 50000 |
-| N<sub>L</sub> | lose experience buffer size | 50000 |
+| N<sub>W</sub> | win experience buffer size | 100000 |
+| N<sub>L</sub> | lose experience buffer size | 100000 |
 | K | replay start size | 100000 |
 | ε | exploration rate | 0.1 |
 | γ | future reward discount | 0.99 |
 | λ | learning rate | 0.0001 |
 | τ | target network update rate | 0.001 |
 
-We use the Adam gradient-descent algorithm for training the network ([Kingma et. al., 2014](https://arxiv.org/abs/1412.6980)) (also see TensorFlow [tf.train.AdamOptimizer](https://www.tensorflow.org/api_docs/python/tf/train/AdamOptimizer).
-
+When using a single buffer for both win and loss experience, the buffer size was N<sub>W</sub> + N<sub>L</sub>.
 
 #### Results
 
-The network is generally able to learn an optimal strategy in 50k timesteps. Win rates by testing the best guess of the network from 100 battles * 10 trials after a given number of training steps.
+Win rates are evauluated after a given number of timesteps by testing the algorithm with ε=0 in 100 battles.
 
 ![Graph of results from 4 experiments](results/chart.png)
+
+At 50k timesteps, the standard deviations in win-rate of the algorithms are:
+
+| Algorithm | Win rate standard dev over 10 trials |
+| --- | --- |
+| Standard DQN | 0.131 |
+| alternate ε=0 | 0.318 |
+| win-loss-buffers | 0.379 |
+| alternate ε=0 + win-loss-buffers | 0.392 |
+
+The standard DQN is able to learn optimal strategy reliably.
+The alternate ε=0 var
+
+
+The network is generally able to learn a decent strategy in 50k timesteps with all variants of the algorithm
+
 
 
 
