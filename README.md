@@ -70,8 +70,8 @@ The main advantage of TorchCraft is that one can build a StarCraft agent in a Un
 
 ### Python Client and TorchCraft integration for BWAPI
 
-In order to the TensorFlow python api in a native Unix environment for building StarCraft AIs, we have written a python client for the TorchCraft C++ server:
-- Network IO is generally in [tc_client.py](tc_client.py).
+To use the TensorFlow python api in a native Unix environment for building StarCraft AIs, we have written a python client for the TorchCraft C++ server:
+- Socket IO is in [tc_client.py](tc_client.py).
 - The TorchCraft server returns the game-state as a Lua object string, which we transform into a python object string and ```eval()``` [here](https://github.com/aedanpope/tc_client/blob/427aafc9aa5dce7561325e74c64f4e8a13905e5e/tc_client.py#L254).
 - [state.py](state.py) is responsible for parsing the responses from the server and turning them into typed obejects.
 - [exercise.py](exercise.py) shows a ```main()``` function which instantiates a client and sends it commands from an agent.
