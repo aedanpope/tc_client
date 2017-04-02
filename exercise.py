@@ -273,9 +273,10 @@ if __name__ == '__main__':
               test_battles_fought = 0
               test_battles_won = 0
               for n in test_battles_fought_per_kite.keys():
+                kite_n_last_test_result = float(test_battles_won_per_kite[n]) / test_battles_fought_per_kite[n]
                 output("kite_" + str(n) + " Results = " +
                        str(test_battles_won_per_kite[n]) + "/" + str(test_battles_fought_per_kite[n]) +
-                       " = " + str(last_test_result))
+                       " = " + str(kite_n_last_test_result))
                 test_battles_fought_per_kite[n] = 0
                 test_battles_won_per_kite[n] = 0
               time.sleep(1)
