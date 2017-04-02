@@ -162,8 +162,9 @@ class ExperienceRecordingBot:
 
   def close(self):
     experience_list = experience_pb2.ExperienceList()
-    add_experiences_to_list(experience_list, self.experience_buffer.win_buffer, True)
+    table = self.experience_buffer.win_buffer + self.experience_buffer.lose_buffer
     add_experiences_to_list(experience_list, self.experience_buffer.lose_buffer, False)
+    add_experiences_to_list(experience_list, self.experience_buffer.win_buffer, True)
     f = open(self.file_path, 'wb')
     f.write(experience_list.SerializeToString())
     f.close()

@@ -52,8 +52,8 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser('Run a StarCraft torch client.')
   parser.add_argument('-s', '--speed', type=int, default=1,
       help='The speed to run starcraft in, 1-13 with 13 being slowest')
-  parser.add_argument('-k', '--kite', type=int, default=2, choices=[2, 3, 4],
-      help='Which kite map to load, options are 2 and 4')
+  parser.add_argument('-k', '--kite', default='2', choices=['2', '3', '4', '2o3', '2o3o4'],
+      help='Which kite map to load.')
   parser.add_argument('-f', '--out_file', help='File to log results of trials to.')
   parser.add_argument('-t', '--trials', type=int, default=1,
       help='Number of trials to run for each config')
@@ -181,24 +181,40 @@ if __name__ == '__main__':
       train_battles_fought = 0
       train_battles_won = 0
 
+      test_battles_per_kite = Map()
       test_battles_fought = 0
       test_battles_won = 0
       test_battles = None
       last_test_result = None
 
+      kite_n = None
+      test_battles_fought_per_kite = {}
+      test_battles_won_per_kite = {}
+
       # Start with a test:
       step_last_test_start = 0
-      mode = Mode.test
       test_battles = args.test_battles
+      if test_battles > 0:
+        mode = Mode.test
+      else:
+        mode = Mode.train
+
       # train_for_steps+100 not +0 , so that we can finish the last training battle.
       while steps_trained <= train_for_steps+100 or (mode == Mode.test and test_battles_fought < test_battles):
         update = tc.receive()
         commands = []
 
+
+
         # Don't send repeated frames of the same ended battle state.
         if not tc.state.battle_ended or tc.state.battle_just_ended:
           if not tc.state.battle_ended and mode == Mode.train:
             steps_trained += 1
+          if kite_n is None:
+            kite_n = 1+((tc.state.enemy_units.values()[0].get_life()-1) / 20)
+            if not kite_n in test_battles_fought_per_kite:
+              test_battles_fought_per_kite[kite_n] = 0
+              test_battles_won_per_kite[kite_n] = 0
           # Populate commands.
           unit_commands = bot.get_commands(tc.state, mode);
           commands = [[tc_client.CMD.command_unit_protected] + unit_command for unit_command in unit_commands]
@@ -233,6 +249,7 @@ if __name__ == '__main__':
           print "\nBATTLE ENDED"
           print ""
 
+          print "kite_n = " + str(kite_n)
           won = int(tc.state.battle_won)
 
           if (mode == Mode.train):
@@ -241,6 +258,9 @@ if __name__ == '__main__':
           else:
             test_battles_fought += 1
             test_battles_won += won
+            test_battles_fought_per_kite[kite_n] += 1
+            test_battles_won_per_kite[kite_n] += won
+
             test_battles -= 1
             if test_battles == 0:
               test_battles = None
@@ -252,11 +272,18 @@ if __name__ == '__main__':
                      " = " + str(last_test_result))
               test_battles_fought = 0
               test_battles_won = 0
+              for n in test_battles_fought_per_kite.keys():
+                output("kite_" + str(n) + " Results = " +
+                       str(test_battles_won_per_kite[n]) + "/" + str(test_battles_fought_per_kite[n]) +
+                       " = " + str(last_test_result))
+                test_battles_fought_per_kite[n] = 0
+                test_battles_won_per_kite[n] = 0
               time.sleep(1)
               mode = Mode.train
               if (steps_trained >= train_for_steps):
                 # Finished training and testing, finished with this trial.
                 break
+          kite_n = None
 
           print "case = " + str(case)
           print "trial = " + str(trial)
@@ -266,12 +293,17 @@ if __name__ == '__main__':
           print "last_test_results = " + str(last_test_result)
           print "test_battles_fought = " + str(test_battles_fought)
           print "test_battles_won = " + str(test_battles_won)
+
+          for n in test_battles_fought_per_kite.keys():
+            print "kite_" + str(n) + " test_battles_fought = " + str(test_battles_fought_per_kite[n])
+            print "kite_" + str(n) + " test_battles_won = " + str(test_battles_won_per_kite[n])
+
           print "current_mode = " + str(mode)
           print "steps_trained = " + str(steps_trained) + "/" + str(train_for_steps)
           print "check_for_test = " + str((steps_trained - step_last_test_start) / args.test_period)
 
           # Start testing if we've finished training, or periodically.
-          if mode == Mode.train and (
+          if mode == Mode.train and args.test_battles > 0 and (
              steps_trained >= train_for_steps or ((steps_trained - step_last_test_start) / args.test_period >= 1)):
             mode = Mode.test
             step_last_test_start = steps_trained

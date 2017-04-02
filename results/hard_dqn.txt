@@ -2278,3 +2278,23 @@ Results = 3/100 = 0.03
 END case: foo, trial: 9
 train win rate: 0.293944491169
 test win rate: 0.03
+
+Command:
+exercise.py --speed=1 --kite=2o3 --trials=10 --test_battles=100 --test_period=5000 --experience=data/100000steps.pb -hp    foo={'BUFFER_SIZE':200000, 'SEPARATE_BUFFERS':False, 'ACTION_STRATEGY':Act.Greedy, 'ANNEALING_STEPS':0, 'POST_ANNEALING_STEPS':50000, 'UPDATE_FREQ':1, 'END_E':0.1, 'LEARNING_RATE':0.0001, 'BATCH_SIZE':100},    --out_file=results/hard_dqn.txt
+default hyperparameters: {'TAU': 0.001, 'LEARNING_RATE': 0.01, 'START_E': 1, 'FUTURE_Q_DISCOUNT': 0.99, 'HID_2_SHAPE': 200, 'BATCH_SIZE': 100, 'SEPARATE_BUFFERS': True, 'ANNEALING_STEPS': 50000, 'POST_ANNEALING_STEPS': 10000, 'BUFFER_SIZE': 50000, 'ACTION_STRATEGY': 1, 'HID_1_SHAPE': 300, 'PRE_TRAIN_STEPS': 0, 'END_E': 0.05, 'UPDATE_FREQ': 4}
+case: foo
+hyperparameters: {'SEPARATE_BUFFERS': False, 'ANNEALING_STEPS': 0, 'BATCH_SIZE': 100, 'ACTION_STRATEGY': 0, 'BUFFER_SIZE': 200000, 'LEARNING_RATE': 0.0001, 'UPDATE_FREQ': 1, 'END_E': 0.1, 'POST_ANNEALING_STEPS': 50000}
+
+Command:
+exercise.py --speed=30 --kite=2o3 --trials=10 --test_battles=100 --test_period=5000 --experience=data/100000steps.pb -hp    foo={'BUFFER_SIZE':200000, 'SEPARATE_BUFFERS':False, 'ACTION_STRATEGY':Act.Greedy, 'ANNEALING_STEPS':0, 'POST_ANNEALING_STEPS':50000, 'UPDATE_FREQ':1, 'END_E':0.1, 'LEARNING_RATE':0.0001, 'BATCH_SIZE':100},    --out_file=results/hard_dqn.txt
+default hyperparameters: {'TAU': 0.001, 'LEARNING_RATE': 0.01, 'START_E': 1, 'FUTURE_Q_DISCOUNT': 0.99, 'HID_2_SHAPE': 200, 'BATCH_SIZE': 100, 'SEPARATE_BUFFERS': True, 'ANNEALING_STEPS': 50000, 'POST_ANNEALING_STEPS': 10000, 'BUFFER_SIZE': 50000, 'ACTION_STRATEGY': 1, 'HID_1_SHAPE': 300, 'PRE_TRAIN_STEPS': 0, 'END_E': 0.05, 'UPDATE_FREQ': 4}
+case: foo
+hyperparameters: {'SEPARATE_BUFFERS': False, 'ANNEALING_STEPS': 0, 'BATCH_SIZE': 100, 'ACTION_STRATEGY': 0, 'BUFFER_SIZE': 200000, 'LEARNING_RATE': 0.0001, 'UPDATE_FREQ': 1, 'END_E': 0.1, 'POST_ANNEALING_STEPS': 50000}
+START case: foo, trial: 0
+
+Command:
+exercise.py --speed=30 --kite=2o3 --trials=10 --test_battles=100 --test_period=5000 --experience=data/100000steps.pb -hp    foo={'BUFFER_SIZE':200000, 'SEPARATE_BUFFERS':False, 'ACTION_STRATEGY':Act.Greedy, 'ANNEALING_STEPS':0, 'POST_ANNEALING_STEPS':50000, 'UPDATE_FREQ':1, 'END_E':0.1, 'LEARNING_RATE':0.0001, 'BATCH_SIZE':100},    --out_file=results/hard_dqn.txt
+default hyperparameters: {'TAU': 0.001, 'LEARNING_RATE': 0.01, 'START_E': 1, 'FUTURE_Q_DISCOUNT': 0.99, 'HID_2_SHAPE': 200, 'BATCH_SIZE': 100, 'SEPARATE_BUFFERS': True, 'ANNEALING_STEPS': 50000, 'POST_ANNEALING_STEPS': 10000, 'BUFFER_SIZE': 50000, 'ACTION_STRATEGY': 1, 'HID_1_SHAPE': 300, 'PRE_TRAIN_STEPS': 0, 'END_E': 0.05, 'UPDATE_FREQ': 4}
+case: foo
+hyperparameters: {'SEPARATE_BUFFERS': False, 'ANNEALING_STEPS': 0, 'BATCH_SIZE': 100, 'ACTION_STRATEGY': 0, 'BUFFER_SIZE': 200000, 'LEARNING_RATE': 0.0001, 'UPDATE_FREQ': 1, 'END_E': 0.1, 'POST_ANNEALING_STEPS': 50000}
+START case: foo, trial: 0

@@ -1,0 +1,146 @@
+
+# Get experience data:
+p exercise.py --speed=1 --kite=2o3 --trials=1 -hp "foo={'PRE_TRAIN_STEPS':100000, 'ANNEALING_STEPS':0, 'POST_ANNEALING_STEPS':0}" --test_battles=0  --record=data/100000steps-kite_2o3.pb
+
+p exercise.py --speed=1 --kite=2o3 --trials=10 --test_battles=100 --test_period=5000 \
+  --experience=data/100000steps-kite_2o3.pb -hp \
+  " \
+  foo={'BUFFER_SIZE':200000, 'SEPARATE_BUFFERS':False, 'ACTION_STRATEGY':Act.Greedy, 'ANNEALING_STEPS':0, 'POST_ANNEALING_STEPS':50000, 'UPDATE_FREQ':1, 'END_E':0.1, 'LEARNING_RATE':0.0001, 'BATCH_SIZE':100}, \
+  " \
+  --out_file=results/kite_2o3.txt
+
+
+Command:
+exercise.py --speed=30 --kite=2o3 --trials=10 --test_battles=100 --test_period=5000 --experience=data/100000steps-kite_2o3.pb -hp    foo={'BUFFER_SIZE':200000, 'SEPARATE_BUFFERS':False, 'ACTION_STRATEGY':Act.Greedy, 'ANNEALING_STEPS':0, 'POST_ANNEALING_STEPS':50000, 'UPDATE_FREQ':1, 'END_E':0.1, 'LEARNING_RATE':0.0001, 'BATCH_SIZE':100},    --out_file=results/kite_2o3.txt
+default hyperparameters: {'TAU': 0.001, 'LEARNING_RATE': 0.01, 'START_E': 1, 'FUTURE_Q_DISCOUNT': 0.99, 'HID_2_SHAPE': 200, 'BATCH_SIZE': 100, 'SEPARATE_BUFFERS': True, 'ANNEALING_STEPS': 50000, 'POST_ANNEALING_STEPS': 10000, 'BUFFER_SIZE': 50000, 'ACTION_STRATEGY': 1, 'HID_1_SHAPE': 300, 'PRE_TRAIN_STEPS': 0, 'END_E': 0.05, 'UPDATE_FREQ': 4}
+case: foo
+hyperparameters: {'SEPARATE_BUFFERS': False, 'ANNEALING_STEPS': 0, 'BATCH_SIZE': 100, 'ACTION_STRATEGY': 0, 'BUFFER_SIZE': 200000, 'LEARNING_RATE': 0.0001, 'UPDATE_FREQ': 1, 'END_E': 0.1, 'POST_ANNEALING_STEPS': 50000}
+START case: foo, trial: 0
+Test Finished
+steps_trained = 0
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 5003
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 10009
+Results = 36/100 = 0.36
+Test Finished
+steps_trained = 15017
+Results = 45/100 = 0.45
+Test Finished
+steps_trained = 20020
+Results = 47/100 = 0.47
+Test Finished
+steps_trained = 25022
+Results = 50/100 = 0.5
+Test Finished
+steps_trained = 30032
+Results = 41/100 = 0.41
+Test Finished
+steps_trained = 35043
+Results = 48/100 = 0.48
+Test Finished
+steps_trained = 40082
+Results = 2/100 = 0.02
+Test Finished
+steps_trained = 45090
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 50031
+Results = 0/100 = 0.0
+END case: foo, trial: 0
+train win rate: 0.114463176575
+test win rate: 0.0
+START case: foo, trial: 1
+Test Finished
+steps_trained = 0
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 5001
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 10005
+Results = 5/100 = 0.05
+Test Finished
+steps_trained = 15020
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 20029
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 25038
+Results = 7/100 = 0.07
+Test Finished
+steps_trained = 30044
+Results = 32/100 = 0.32
+Test Finished
+steps_trained = 35065
+Results = 13/100 = 0.13
+Test Finished
+steps_trained = 40072
+Results = 43/100 = 0.43
+Test Finished
+steps_trained = 45073
+Results = 85/100 = 0.85
+Test Finished
+steps_trained = 50015
+Results = 74/100 = 0.74
+END case: foo, trial: 1
+train win rate: 0.156781130767
+test win rate: 0.74
+START case: foo, trial: 2
+Test Finished
+steps_trained = 0
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 5000
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 10002
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 15015
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 20039
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 25054
+Results = 0/100 = 0.0
+Test Finished
+steps_trained = 30071
+Results = 27/100 = 0.27
+Test Finished
+steps_trained = 35089
+Results = 42/100 = 0.42
+Test Finished
+steps_trained = 40107
+Results = 32/100 = 0.32
+Test Finished
+steps_trained = 45119
+Results = 52/100 = 0.52
+Test Finished
+steps_trained = 50005
+Results = 4/100 = 0.04
+END case: foo, trial: 2
+train win rate: 0.0833620392697
+test win rate: 0.04
+START case: foo, trial: 3
+Test Finished
+steps_trained = 0
+Results = 0/100 = 0.0
+
+
+
+Command:
+exercise.py --speed=30 --kite=2o3 --trials=10 --test_battles=100 --test_period=5000 --experience=data/100000steps-kite_2o3.pb -hp    foo={'BUFFER_SIZE':200000, 'SEPARATE_BUFFERS':False, 'ACTION_STRATEGY':Act.Greedy, 'ANNEALING_STEPS':0, 'POST_ANNEALING_STEPS':50000, 'UPDATE_FREQ':1, 'END_E':0.1, 'LEARNING_RATE':0.0001, 'BATCH_SIZE':100},    --out_file=results/kite_2o3.txt
+default hyperparameters: {'TAU': 0.001, 'LEARNING_RATE': 0.01, 'START_E': 1, 'FUTURE_Q_DISCOUNT': 0.99, 'HID_2_SHAPE': 200, 'BATCH_SIZE': 100, 'SEPARATE_BUFFERS': True, 'ANNEALING_STEPS': 50000, 'POST_ANNEALING_STEPS': 10000, 'BUFFER_SIZE': 50000, 'ACTION_STRATEGY': 1, 'HID_1_SHAPE': 300, 'PRE_TRAIN_STEPS': 0, 'END_E': 0.05, 'UPDATE_FREQ': 4}
+case: foo
+hyperparameters: {'SEPARATE_BUFFERS': False, 'ANNEALING_STEPS': 0, 'BATCH_SIZE': 100, 'ACTION_STRATEGY': 0, 'BUFFER_SIZE': 200000, 'LEARNING_RATE': 0.0001, 'UPDATE_FREQ': 1, 'END_E': 0.1, 'POST_ANNEALING_STEPS': 50000}
+START case: foo, trial: 0
+Test Finished
+steps_trained = 0
+Results = 0/100 = 0.0
+kite_1 Results = 0/50 = 0.0
+kite_2 Results = 0/50 = 0.0
